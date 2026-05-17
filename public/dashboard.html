@@ -733,7 +733,7 @@ body.dark #shiptrack-map{filter:invert(0.9) hue-rotate(180deg)}
   <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px">
     <div class="stat-card gold"><div class="stat-label">Total Receiving</div><div class="stat-value" id="inv-total-receiving">--</div><div class="stat-sub">units at warehouse</div></div>
     <div class="stat-card blue"><div class="stat-label">Total FBA</div><div class="stat-value" id="inv-total-fba">--</div><div class="stat-sub">units at Amazon</div></div>
-    <div class="stat-card sage"><div class="stat-label">Est. Proceeds</div><div class="stat-value" id="inv-total-proceeds">--</div><div class="stat-sub">receiving inventory</div></div>
+    <div class="stat-card sage"><div class="stat-label">Est. Proceeds</div><div class="stat-value" id="inv-total-proceeds">--</div><div class="stat-sub">receiving + FBA</div></div>
     <div class="stat-card amber"><div class="stat-label">Est. Cost</div><div class="stat-value" id="inv-total-cost">--</div><div class="stat-sub">receiving inventory</div></div>
   </div>
   <div class="toolbar" style="margin-bottom:20px">
@@ -1993,7 +1993,14 @@ function renderInventory(){
     totalProceeds+=(prod?.proceeds||0)*(data.qty||0);
     totalCost+=data.cost||0;
   });
-  document.getElementById('inv-total-proceeds').textContent='$'+totalProceeds.toFixed(2);
+
+  // Add FBA proceeds to total
+  const fbaProceeds=fbaInventory.reduce((s,item)=>{
+    const prod=products.find(p=>p.name===item.product_name);
+    return s+(prod?.proceeds||0)*(item.quantity||0);
+  },0);
+
+  document.getElementById('inv-total-proceeds').textContent='$'+(totalProceeds+fbaProceeds).toFixed(2);
   document.getElementById('inv-total-cost').textContent='$'+totalCost.toFixed(2);
 
   // Receiving table

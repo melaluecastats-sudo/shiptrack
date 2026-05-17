@@ -329,6 +329,10 @@ body.dark #shiptrack-map{filter:invert(0.9) hue-rotate(180deg)}
       <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 7l8-4 8 4v6l-8 4-8-4V7z"/><path d="M10 3v10M2 7l8 4 8-4"/></svg>
       Inventory <span class="nav-badge" id="nav-inv-count">0</span>
     </div>
+    <div class="nav-item" onclick="nav('fbainventory')">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 7h14M3 7l2-4h10l2 4M3 7v9a1 1 0 001 1h12a1 1 0 001-1V7"/><path d="M8 11h4"/></svg>
+      FBA Inventory
+    </div>
     <div class="nav-item" onclick="nav('catalog')">
       <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 2h12a1 1 0 011 1v14a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z"/><path d="M7 6h6M7 10h6M7 14h4"/></svg>
       Product Catalog
@@ -779,6 +783,46 @@ body.dark #shiptrack-map{filter:invert(0.9) hue-rotate(180deg)}
   </div>
 </div>
 
+<!-- FBA INVENTORY -->
+<div class="page-view" id="view-fbainventory">
+  <div class="section-header">
+    <div><div class="section-title">FBA Inventory</div><div class="section-meta">Units at Amazon facilities</div></div>
+    <button class="btn btn-primary" onclick="saveFBAInventory()">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 10l4 4 8-8"/></svg>
+      Save Changes
+    </button>
+  </div>
+
+  <!-- Summary stats -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:28px;max-width:500px">
+    <div class="stat-card gold">
+      <div class="stat-label">Total FBA Units</div>
+      <div class="stat-value" id="fba-inv-total-units">--</div>
+      <div class="stat-sub">at Amazon</div>
+    </div>
+    <div class="stat-card sage">
+      <div class="stat-label">Est. Proceeds</div>
+      <div class="stat-value" id="fba-inv-total-proceeds">--</div>
+      <div class="stat-sub">from FBA inventory</div>
+    </div>
+  </div>
+
+  <!-- Product input table -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">Update FBA Quantities</div>
+      <div class="card-meta">Enter current units at Amazon for each product</div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Product</th><th>Proceeds per Unit</th><th>Units at Amazon</th><th>Est. Proceeds</th></tr></thead>
+        <tbody id="fba-inv-tbody"></tbody>
+      </table>
+    </div>
+    <div class="form-msg" id="fba-inv-msg" style="margin-top:16px"></div>
+  </div>
+</div>
+
 <!-- PRODUCT CATALOG -->
 <div class="page-view" id="view-catalog">
   <div class="section-header">
@@ -1183,11 +1227,12 @@ function runSyncNow(){toast('Sync triggered — check Apps Script logs for detai
 function exportCSV(){const headers=['tracking','carrier','direction','customer_name','vendor_name','description','status','estDelivery','cost','order_number','lastCarrierUpdate','tracking_url'];const rows=shipments.map(s=>headers.map(h=>`"${(s[h]||'').toString().replace(/"/g,'""')}"`).join(','));const csv=[headers.join(','),...rows].join('\n');const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download=`shiptrack-export-${today}.csv`;a.click();}
 function clearData(){if(confirm('Reset?')){shipments=[];renderAll();nav('dashboard');toast('Reset.','default');}}
 
-const PAGE_MAP={dashboard:'view-dashboard',all:'view-all',inbound:'view-inbound',outbound:'view-outbound',add:'view-add',bulk:'view-bulk',alerts:'view-alerts',map:'view-map',mailboxes:'view-mailboxes',inventory:'view-inventory',catalog:'view-catalog',fbashipments:'view-fbashipments',receipts:'view-receipts',import:'view-import',integrations:'view-integrations',settings:'view-settings'};
-const TITLE_MAP={dashboard:'Dashboard',all:'All Shipments',inbound:'Inbound Packages',outbound:'Outbound Shipments',add:'Add Shipment',bulk:'Bulk Add',alerts:'Alerts',map:'Network Map',mailboxes:'Mailbox Directory',inventory:'Inventory',catalog:'Product Catalog',fbashipments:'FBA Shipments',receipts:'Receipts',import:'Import / CSV',integrations:'Integrations',settings:'Settings'};
-const NAV_IDX={dashboard:0,all:1,inbound:2,outbound:3,add:4,bulk:5,alerts:6,map:7,mailboxes:8,inventory:9,catalog:10,fbashipments:11,receipts:12,import:13,integrations:14,settings:15};
+const PAGE_MAP={dashboard:'view-dashboard',all:'view-all',inbound:'view-inbound',outbound:'view-outbound',add:'view-add',bulk:'view-bulk',alerts:'view-alerts',map:'view-map',mailboxes:'view-mailboxes',inventory:'view-inventory',fbainventory:'view-fbainventory',catalog:'view-catalog',fbashipments:'view-fbashipments',receipts:'view-receipts',import:'view-import',integrations:'view-integrations',settings:'view-settings'};
+const TITLE_MAP={dashboard:'Dashboard',all:'All Shipments',inbound:'Inbound Packages',outbound:'Outbound Shipments',add:'Add Shipment',bulk:'Bulk Add',alerts:'Alerts',map:'Network Map',mailboxes:'Mailbox Directory',inventory:'Inventory',fbainventory:'FBA Inventory',catalog:'Product Catalog',fbashipments:'FBA Shipments',receipts:'Receipts',import:'Import / CSV',integrations:'Integrations',settings:'Settings'};
+const NAV_IDX={dashboard:0,all:1,inbound:2,outbound:3,add:4,bulk:5,alerts:6,map:7,mailboxes:8,inventory:9,fbainventory:10,catalog:11,fbashipments:12,receipts:13,import:14,integrations:15,settings:16};
 
-function nav(page){document.querySelectorAll('.page-view').forEach(v=>v.classList.remove('active'));document.querySelectorAll('.nav-item').forEach(v=>v.classList.remove('active'));const view=document.getElementById(PAGE_MAP[page]);if(view)view.classList.add('active');const items=document.querySelectorAll('.nav-item');if(items[NAV_IDX[page]])items[NAV_IDX[page]].classList.add('active');document.getElementById('topbar-title').textContent=TITLE_MAP[page]||page;if(page==='all')renderMainTable();if(page==='inbound')renderDirTable('in');if(page==='outbound')renderDirTable('out');if(page==='alerts')renderAlerts();if(page==='dashboard')renderDashboard();if(page==='integrations'){updateSyncUI();updateApiStatus();}if(page==='inventory')loadInventory();
+function nav(page){document.querySelectorAll('.page-view').forEach(v=>v.classList.remove('active'));document.querySelectorAll('.nav-item').forEach(v=>v.classList.remove('active'));const view=document.getElementById(PAGE_MAP[page]);if(view)view.classList.add('active');const items=document.querySelectorAll('.nav-item');if(items[NAV_IDX[page]])items[NAV_IDX[page]].classList.add('active');document.getElementById('topbar-title').textContent=TITLE_MAP[page]||page;if(page==='all')renderMainTable();if(page==='inbound')renderDirTable('in');if(page==='outbound')renderDirTable('out');if(page==='alerts')renderAlerts();if(page==='dashboard')renderDashboard();if(page==='integrations'){updateSyncUI();updateApiStatus();}if(page==='fbainventory')loadFBAInventoryPage();
+if(page==='inventory')loadInventory();
 if(page==='catalog')loadCatalog();
 if(page==='fbashipments')loadFBAShipments();
 if(page==='receipts')loadReceipts();
@@ -1716,7 +1761,105 @@ function exportReceiptsCSV(){
   a.click();
 }
 
-// ─── INVENTORY ────────────────────────────────────────────────────────────────
+// ─── FBA INVENTORY PAGE ───────────────────────────────────────────────────────
+async function loadFBAInventoryPage(){
+  if(!products.length)await loadCatalog();
+  if(!fbaInventory.length)await loadInventory();
+  renderFBAInventoryPage();
+}
+
+function renderFBAInventoryPage(){
+  const activeProducts=products.filter(p=>p.active);
+  let totalUnits=0,totalProceeds=0;
+
+  const rows=activeProducts.map(p=>{
+    const fbaItem=fbaInventory.find(f=>f.product_name===p.name);
+    const qty=fbaItem?.quantity||0;
+    const proceeds=(p.proceeds||0)*qty;
+    totalUnits+=qty;
+    totalProceeds+=proceeds;
+    return`<tr>
+      <td class="td-name">${p.name}</td>
+      <td style="font-size:13px;color:var(--stone)">$${parseFloat(p.proceeds||0).toFixed(2)}</td>
+      <td><input type="number" min="0" value="${qty}" data-product="${p.name}" 
+        style="width:90px;padding:7px 10px;border-radius:var(--r-sm);border:.5px solid var(--cream-bd2);background:var(--ivory-2);font-family:inherit;font-size:13px;text-align:center"
+        oninput="updateFBARow(this)"></td>
+      <td style="font-size:13px;color:#2A6535" id="fba-proceeds-${p.name.replace(/[^a-zA-Z0-9]/g,'_')}">$${proceeds.toFixed(2)}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('fba-inv-tbody').innerHTML=rows;
+  document.getElementById('fba-inv-total-units').textContent=totalUnits;
+  document.getElementById('fba-inv-total-proceeds').textContent='$'+totalProceeds.toFixed(2);
+}
+
+function updateFBARow(input){
+  const productName=input.getAttribute('data-product');
+  const qty=parseInt(input.value)||0;
+  const prod=products.find(p=>p.name===productName);
+  const proceeds=(prod?.proceeds||0)*qty;
+  const key=productName.replace(/[^a-zA-Z0-9]/g,'_');
+  const el=document.getElementById('fba-proceeds-'+key);
+  if(el)el.textContent='$'+proceeds.toFixed(2);
+
+  // Recalculate totals
+  let totalUnits=0,totalProceeds=0;
+  document.querySelectorAll('#fba-inv-tbody input[data-product]').forEach(inp=>{
+    const pName=inp.getAttribute('data-product');
+    const q=parseInt(inp.value)||0;
+    const p=products.find(pr=>pr.name===pName);
+    totalUnits+=q;
+    totalProceeds+=(p?.proceeds||0)*q;
+  });
+  document.getElementById('fba-inv-total-units').textContent=totalUnits;
+  document.getElementById('fba-inv-total-proceeds').textContent='$'+totalProceeds.toFixed(2);
+}
+
+async function saveFBAInventory(){
+  const msg=document.getElementById('fba-inv-msg');
+  const showMsg=(text,type)=>{msg.textContent=text;msg.className=`form-msg ${type}`;msg.style.display='block';setTimeout(()=>msg.style.display='none',4000);};
+  const inputs=document.querySelectorAll('#fba-inv-tbody input[data-product]');
+  let saved=0,errors=0;
+
+  for(const input of inputs){
+    const productName=input.getAttribute('data-product');
+    const qty=parseInt(input.value)||0;
+    try{
+      const existing=fbaInventory.find(f=>f.product_name===productName);
+      if(existing){
+        await fetch(`${SUPABASE_URL}/rest/v1/inventory_fba?id=eq.${existing.id}`,{
+          method:'PATCH',
+          headers:{'apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`,'Content-Type':'application/json','Prefer':'return=minimal'},
+          body:JSON.stringify({quantity:qty,updated_at:new Date().toISOString()})
+        });
+      }else if(qty>0){
+        const prod=products.find(p=>p.name===productName);
+        await fetch(`${SUPABASE_URL}/rest/v1/inventory_fba`,{
+          method:'POST',
+          headers:{'apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`,'Content-Type':'application/json','Prefer':'return=minimal'},
+          body:JSON.stringify({product_name:productName,product_id:prod?.id||null,quantity:qty,updated_at:new Date().toISOString()})
+        });
+      }
+      saved++;
+    }catch(e){errors++;}
+  }
+
+  if(errors>0){showMsg(`Saved with ${errors} errors.`,'warn');}
+  else{showMsg('FBA inventory saved successfully!','success');}
+
+  // Reload FBA inventory data
+  const res=await fetch(`${SUPABASE_URL}/rest/v1/inventory_fba?select=*`,{headers:{'apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`}});
+  fbaInventory=await res.json();
+
+  // Update nav badge
+  const totalUnits=fbaInventory.reduce((s,i)=>s+(i.quantity||0),0);
+  const totalReceiving=receivingInventory.reduce((s,i)=>s+(i.quantity||0),0);
+  document.getElementById('nav-inv-count').textContent=totalUnits+totalReceiving;
+
+  toast(`FBA inventory updated — ${saved} products saved.`,'success');
+}
+
+
 let products=[],receivingInventory=[],fbaInventory=[],fbaShipmentsList=[];
 let editingProductId=null,fbaItemCount=0;
 

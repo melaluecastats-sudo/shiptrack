@@ -1778,7 +1778,7 @@ function exportReceiptsCSV(){
 // ─── FBA INVENTORY PAGE ───────────────────────────────────────────────────────
 async function loadFBAInventoryPage(){
   const filter=fbaShowHidden?'':'&hidden=eq.false';
-  const res=await fetch(`${SUPABASE_URL}/rest/v1/inventory_fba?select=*&order=product_name.asc${filter}`,{headers:{'apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`}});
+  const res=await fetch(`${SUPABASE_URL}/rest/v1/inventory_fba?select=*&order=sort_order.asc,product_name.asc${filter}`,{headers:{'apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`}});
   if(res.ok)fbaInventory=await res.json();
   renderFBAInventoryPage();
 }

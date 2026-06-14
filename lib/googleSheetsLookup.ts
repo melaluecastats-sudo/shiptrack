@@ -50,7 +50,7 @@ export async function getAccountNameByEmail(email: string): Promise<string | nul
       spreadsheetId: SPREADSHEET_ID,
       range: RANGE
     });
-    cachedData = (res.data.values || []).map(row => ({
+    cachedData = (res.data.values || []).map((row: string[]) => ({
       email: row[0]?.toLowerCase() || '',
       accountName: row[1] || ''
     }));

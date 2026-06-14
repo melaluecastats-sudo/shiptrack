@@ -788,10 +788,13 @@ body.dark #shiptrack-map{filter:invert(0.9) hue-rotate(180deg)}
 <div class="page-view" id="view-fbainventory">
   <div class="section-header">
     <div><div class="section-title">FBA Inventory</div><div class="section-meta">Units at Amazon facilities</div></div>
-    <button class="btn btn-secondary" onclick="refreshFBAInventoryPage()">
-      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 10a6 6 0 1 0 1.6-4M4 6v4h4"/></svg>
-      Refresh
-    </button>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="btn btn-outline" id="fba-show-hidden-btn" onclick="toggleFBAShowHidden()" style="font-size:12px;padding:6px 12px">Show Hidden</button>
+      <button class="btn btn-secondary" onclick="refreshFBAInventoryPage()">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 10a6 6 0 1 0 1.6-4M4 6v4h4"/></svg>
+        Refresh
+      </button>
+    </div>
   </div>
 
   <!-- Summary stats -->
@@ -826,7 +829,7 @@ body.dark #shiptrack-map{filter:invert(0.9) hue-rotate(180deg)}
     </div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>SKU / Product</th><th>Units Available</th><th>Status</th></tr></thead>
+        <thead><tr><th>SKU / Product</th><th>Units Available</th><th>Status</th><th style="width:80px"></th></tr></thead>
         <tbody id="fba-inv-tbody"></tbody>
       </table>
     </div>
@@ -1774,7 +1777,8 @@ function exportReceiptsCSV(){
 
 // ─── FBA INVENTORY PAGE ───────────────────────────────────────────────────────
 async function loadFBAInventoryPage(){
-  const res=await fetch(`${SUPABASE_URL}/rest/v1/inventory_fba?select=*&order=product_name.asc`,{headers:{'apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`}});
+  const filter=fbaShowHidden?'':'&hidden=eq.false';
+  const res=await fetch(`${SUPABASE_URL}/rest/v1/inventory_fba?select=*&order=product_name.asc${filter}`,{headers:{'apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`}});
   if(res.ok)fbaInventory=await res.json();
   renderFBAInventoryPage();
 }
@@ -1801,19 +1805,66 @@ function renderFBAInventoryPage(){
 
   const rows=items.map(i=>{
     const qty=i.quantity||0;
-    const inStockItem=qty>0;
-    const rowBg=inStockItem?'rgba(42,101,53,0.07)':'rgba(180,75,60,0.07)';
-    const badge=inStockItem
-      ?'<span style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:99px;background:rgba(42,101,53,.12);color:#2A6535;font-size:11px;font-weight:500">In Stock</span>'
-      :'<span style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:99px;background:rgba(180,75,60,.12);color:#B44B3C;font-size:11px;font-weight:500">Out of Stock</span>';
-    return`<tr style="background:${rowBg}">
+    const isHidden=i.hidden===true;
+    const inStockItem=qty>0&&!isHidden;
+    const rowBg=isHidden?'rgba(0,0,0,0.04)':inStockItem?'rgba(42,101,53,0.07)':'rgba(180,75,60,0.07)';
+    const rowStyle=isHidden?'opacity:0.5;text-decoration:line-through':'';
+    const badge=isHidden
+      ?'<span style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:99px;background:rgba(0,0,0,.08);color:#888;font-size:11px;font-weight:500">Hidden</span>'
+      :inStockItem
+        ?'<span style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:99px;background:rgba(42,101,53,.12);color:#2A6535;font-size:11px;font-weight:500">In Stock</span>'
+        :'<span style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:99px;background:rgba(180,75,60,.12);color:#B44B3C;font-size:11px;font-weight:500">Out of Stock</span>';
+    const escapedName=i.product_name?i.product_name.replace(/'/g,"\\'"):'';
+    const actionBtn=isHidden
+      ?`<button onclick="unhideFBASku('${escapedName}',this.closest('tr'))" style="font-size:11px;padding:3px 8px;border:1px solid #ccc;border-radius:4px;background:#fff;cursor:pointer;color:#2A6535">Unhide</button>`
+      :`<button onclick="hideFBASku('${escapedName}',this.closest('tr'))" style="font-size:11px;padding:3px 8px;border:1px solid #ccc;border-radius:4px;background:#fff;cursor:pointer;color:#888">Hide</button>`;
+    return`<tr style="background:${rowBg};${rowStyle}">
       <td class="td-name">${i.product_name||'—'}</td>
       <td style="font-size:13px;font-weight:600">${qty}</td>
       <td>${badge}</td>
+      <td>${actionBtn}</td>
     </tr>`;
   }).join('');
 
-  document.getElementById('fba-inv-tbody').innerHTML=rows||'<tr><td colspan="3" style="text-align:center;color:var(--stone);padding:24px">No inventory data</td></tr>';
+  document.getElementById('fba-inv-tbody').innerHTML=rows||'<tr><td colspan="4" style="text-align:center;color:var(--stone);padding:24px">No inventory data</td></tr>';
+}
+
+function showFBAToast(msg){
+  const t=document.getElementById('fba-toast');
+  t.textContent=msg;t.style.display='block';
+  setTimeout(()=>t.style.display='none',2500);
+}
+
+async function hideFBASku(productName,rowEl){
+  const res=await fetch(`${SUPABASE_URL}/rest/v1/inventory_fba?product_name=eq.${encodeURIComponent(productName)}`,{
+    method:'PATCH',
+    headers:{'apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`,'Content-Type':'application/json','Prefer':'return=minimal'},
+    body:JSON.stringify({hidden:true})
+  });
+  if(res.ok){rowEl.remove();showFBAToast('SKU hidden');}
+  else showFBAToast('Error hiding SKU');
+}
+
+async function unhideFBASku(productName,rowEl){
+  const res=await fetch(`${SUPABASE_URL}/rest/v1/inventory_fba?product_name=eq.${encodeURIComponent(productName)}`,{
+    method:'PATCH',
+    headers:{'apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`,'Content-Type':'application/json','Prefer':'return=minimal'},
+    body:JSON.stringify({hidden:false})
+  });
+  if(res.ok){await loadFBAInventoryPage();showFBAToast('SKU restored');}
+  else showFBAToast('Error restoring SKU');
+}
+
+async function toggleFBAShowHidden(){
+  fbaShowHidden=!fbaShowHidden;
+  const btn=document.getElementById('fba-show-hidden-btn');
+  if(btn){
+    btn.textContent=fbaShowHidden?'Hide Hidden':'Show Hidden';
+    btn.style.background=fbaShowHidden?'rgba(42,101,53,.12)':'';
+    btn.style.color=fbaShowHidden?'#2A6535':'';
+  }
+  document.getElementById('fba-inv-tbody').innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--stone);padding:24px">Loading...</td></tr>';
+  await loadFBAInventoryPage();
 }
 
 function updateFBARow(input){
@@ -1884,6 +1935,7 @@ async function saveFBAInventory(){
 
 
 let products=[],receivingInventory=[],fbaInventory=[],fbaShipmentsList=[];
+let fbaShowHidden=false;
 let editingProductId=null,fbaItemCount=0;
 
 async function loadCatalog(){
@@ -2211,5 +2263,7 @@ updateApiStatus();
 loadFromSupabase();
 loadMailboxes();
 </script>
+
+<div id="fba-toast" style="display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1C1A17;color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.3)"></div>
 </body>
 </html>

@@ -137,6 +137,7 @@ tbody td:last-child{padding-right:20px}
 .badge-unknown{background:var(--ivory-3);color:var(--stone)}.badge-unknown::before{background:var(--linen)}
 .badge-failed{background:#FDF0EA;color:#8A5A2A}.badge-failed::before{background:#C48A4A}
 .badge-returned{background:#F0F0F0;color:#555}.badge-returned::before{background:#999}
+.badge-lost{background:#1a1a2e;color:#ff4444;border:1px solid #ff4444;}
 .carrier-badge{display:inline-block;padding:3px 9px;border-radius:var(--r-sm);font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;border:.5px solid}
 .carrier-ups{background:#FDF4E8;color:#7A5228;border-color:rgba(122,82,40,.15)}
 .carrier-usps{background:#EAF0F8;color:#2A4A7A;border-color:rgba(42,74,122,.15)}
@@ -432,7 +433,7 @@ body.dark #shiptrack-map{filter:invert(0.9) hue-rotate(180deg)}
   <div class="toolbar">
     <input class="filter-input" type="text" id="filter-search" placeholder="Search tracking, contact, description…" oninput="renderMainTable()">
     <select class="filter-select" id="filter-carrier" onchange="renderMainTable()"><option value="">All carriers</option><option>UPS</option><option>USPS</option><option>FedEx</option><option>DHL</option></select>
-    <select class="filter-select" id="filter-status" onchange="renderMainTable()"><option value="">All statuses</option><option>Label Created</option><option>In Transit</option><option>Out for Delivery</option><option>Delivered</option><option>Delayed</option><option>Delivery Exception</option><option>Failed Attempt</option><option>Returned</option><option>Unknown</option></select>
+    <select class="filter-select" id="filter-status" onchange="renderMainTable()"><option value="">All statuses</option><option>Label Created</option><option>In Transit</option><option>Out for Delivery</option><option>Delivered</option><option>Delayed</option><option>Delivery Exception</option><option>Failed Attempt</option><option>Returned</option><option>Lost</option><option>Unknown</option></select>
     <div class="filter-tabs" id="dir-tabs"><div class="filter-tab active" onclick="setDirTab(this,'')">All</div><div class="filter-tab" onclick="setDirTab(this,'inbound')">Inbound</div><div class="filter-tab" onclick="setDirTab(this,'outbound')">Outbound</div></div>
   </div>
   <div class="table-wrap"><table><thead><tr><th>Tracking #</th><th>Carrier</th><th>Dir.</th><th>Contact / Customer</th><th>Description</th><th>Status</th><th>Est. Delivery</th><th>Last Update</th><th>Actions</th></tr></thead><tbody id="main-tbody"></tbody></table></div>
@@ -444,7 +445,7 @@ body.dark #shiptrack-map{filter:invert(0.9) hue-rotate(180deg)}
   <div class="section-header"><div class="section-title">Inbound Packages</div><div class="section-meta">Arriving to you</div></div>
   <div class="toolbar">
     <input class="filter-input" type="text" id="in-search" placeholder="Search…" oninput="renderDirTable('in')">
-    <select class="filter-select" id="in-status" onchange="renderDirTable('in')"><option value="">All statuses</option><option>Label Created</option><option>In Transit</option><option>Out for Delivery</option><option>Delivered</option><option>Delayed</option><option>Delivery Exception</option></select>
+    <select class="filter-select" id="in-status" onchange="renderDirTable('in')"><option value="">All statuses</option><option>Label Created</option><option>In Transit</option><option>Out for Delivery</option><option>Delivered</option><option>Delayed</option><option>Delivery Exception</option><option>Returned</option><option>Lost</option></select>
   </div>
   <div class="table-wrap"><table><thead><tr><th>Tracking #</th><th>Carrier</th><th>Vendor / Sender</th><th>Description</th><th>Status</th><th>Est. Delivery</th><th>Last Update</th><th>Actions</th></tr></thead><tbody id="in-tbody"></tbody></table></div>
   <div class="empty-state" id="in-empty" style="display:none"><div class="empty-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 17V7M6 11l4-4 4 4"/></svg></div><div class="empty-title">No inbound shipments</div><div class="empty-sub">Configure Gmail auto-sync in Integrations.</div></div>
@@ -455,7 +456,7 @@ body.dark #shiptrack-map{filter:invert(0.9) hue-rotate(180deg)}
   <div class="section-header"><div class="section-title">Outbound Shipments</div><div class="section-meta">Sent from you</div></div>
   <div class="toolbar">
     <input class="filter-input" type="text" id="out-search" placeholder="Search…" oninput="renderDirTable('out')">
-    <select class="filter-select" id="out-status" onchange="renderDirTable('out')"><option value="">All statuses</option><option>Label Created</option><option>In Transit</option><option>Out for Delivery</option><option>Delivered</option><option>Delayed</option><option>Delivery Exception</option></select>
+    <select class="filter-select" id="out-status" onchange="renderDirTable('out')"><option value="">All statuses</option><option>Label Created</option><option>In Transit</option><option>Out for Delivery</option><option>Delivered</option><option>Delayed</option><option>Delivery Exception</option><option>Returned</option><option>Lost</option></select>
   </div>
   <div class="table-wrap"><table><thead><tr><th>Tracking #</th><th>Carrier</th><th>Customer / Recipient</th><th>Description</th><th>Status</th><th>Est. Delivery</th><th>Cost</th><th>Actions</th></tr></thead><tbody id="out-tbody"></tbody></table></div>
   <div class="empty-state" id="out-empty" style="display:none"><div class="empty-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 3v10M6 9l4-4 4 4"/></svg></div><div class="empty-title">No outbound shipments</div><div class="empty-sub">Import Pirate Ship CSV or configure auto-sync.</div></div>
@@ -469,7 +470,7 @@ body.dark #shiptrack-map{filter:invert(0.9) hue-rotate(180deg)}
       <div class="form-group"><label class="form-label">Tracking Number *</label><input class="form-control" type="text" id="f-tracking" placeholder="1Z999AA10123456784"></div>
       <div class="form-group"><label class="form-label">Carrier *</label><select class="form-control form-select" id="f-carrier"><option value="">Select carrier</option><option>UPS</option><option>USPS</option><option>FedEx</option><option>DHL</option><option>Other</option></select></div>
       <div class="form-group"><label class="form-label">Direction *</label><select class="form-control form-select" id="f-direction"><option value="inbound">Inbound — Arriving to me</option><option value="outbound">Outbound — Sent by me</option></select></div>
-      <div class="form-group"><label class="form-label">Current Status</label><select class="form-control form-select" id="f-status"><option>Unknown</option><option>Label Created</option><option>In Transit</option><option>Out for Delivery</option><option>Delivered</option><option>Delayed</option><option>Delivery Exception</option></select></div>
+      <div class="form-group"><label class="form-label">Current Status</label><select class="form-control form-select" id="f-status"><option>Unknown</option><option>Label Created</option><option>In Transit</option><option>Out for Delivery</option><option>Delivered</option><option>Delayed</option><option>Delivery Exception</option><option>Returned</option><option>Lost</option></select></div>
       <div class="form-group"><label class="form-label">Customer / Sender</label><input class="form-control" type="text" id="f-contact" placeholder="Name or company"></div>
       <div class="form-group"><label class="form-label">Expected Delivery</label><input class="form-control" type="date" id="f-date"></div>
       <div class="form-divider"></div>
@@ -1053,7 +1054,7 @@ body.dark #shiptrack-map{filter:invert(0.9) hue-rotate(180deg)}
       <div class="form-group"><label class="form-label">Tracking Number</label><input class="form-control" type="text" id="edit-tracking" readonly style="opacity:.6"></div>
       <div class="form-group"><label class="form-label">Carrier</label><select class="form-control form-select" id="edit-carrier"><option>UPS</option><option>USPS</option><option>FedEx</option><option>DHL</option><option>Other</option></select></div>
       <div class="form-group"><label class="form-label">Direction</label><select class="form-control form-select" id="edit-direction"><option value="inbound">Inbound — Arriving to me</option><option value="outbound">Outbound — Sent by me</option></select></div>
-      <div class="form-group"><label class="form-label">Status</label><select class="form-control form-select" id="edit-status"><option>Unknown</option><option>Label Created</option><option>In Transit</option><option>Out for Delivery</option><option>Delivered</option><option>Delayed</option><option>Delivery Exception</option></select></div>
+      <div class="form-group"><label class="form-label">Status</label><select class="form-control form-select" id="edit-status"><option>Unknown</option><option>Label Created</option><option>In Transit</option><option>Out for Delivery</option><option>Delivered</option><option>Delayed</option><option>Delivery Exception</option><option>Returned</option><option>Lost</option></select></div>
       <div class="form-group"><label class="form-label">Contact / Customer</label><input class="form-control" type="text" id="edit-contact"></div>
       <div class="form-group"><label class="form-label">Expected Delivery</label><input class="form-control" type="date" id="edit-date"></div>
       <div class="form-group full"><label class="form-label">Description</label><input class="form-control" type="text" id="edit-desc"></div>
@@ -1090,7 +1091,7 @@ function isDelayed(s){if(!s.estDelivery||DELIVERED.includes(s.status))return fal
 function isProblem(s){return PROBLEMS.includes(s.status)||isDelayed(s)||isStale(s);}
 function getTrackingUrl(s){if(s.tracking_url)return s.tracking_url;const m={'UPS':`https://www.ups.com/track?tracknum=${s.tracking}`,'USPS':`https://tools.usps.com/go/TrackConfirmAction?tLabels=${s.tracking}`,'FedEx':`https://www.fedex.com/fedextrack/?trknbr=${s.tracking}`};return m[s.carrier]||'';}
 
-function statusBadge(st){const m={'In Transit':['badge-transit','In Transit'],'Out for Delivery':['badge-ofd','Out for Delivery'],'Delivered':['badge-delivered','Delivered'],'Delayed':['badge-delayed','Delayed'],'Delivery Exception':['badge-exception','Exception'],'Failed Attempt':['badge-failed','Failed Attempt'],'Label Created':['badge-created','Label Created'],'Returned':['badge-returned','Returned'],'Unknown':['badge-unknown','Not Connected']};const[cls,lbl]=m[st]||['badge-unknown',st||'Unknown'];return`<span class="badge ${cls}">${lbl}</span>`;}
+function statusBadge(st){const m={'In Transit':['badge-transit','In Transit'],'Out for Delivery':['badge-ofd','Out for Delivery'],'Delivered':['badge-delivered','Delivered'],'Delayed':['badge-delayed','Delayed'],'Delivery Exception':['badge-exception','Exception'],'Failed Attempt':['badge-failed','Failed Attempt'],'Label Created':['badge-created','Label Created'],'Returned':['badge-returned','Returned'],'Lost':['badge-lost','Lost'],'Unknown':['badge-unknown','Not Connected']};const[cls,lbl]=m[st]||['badge-unknown',st||'Unknown'];return`<span class="badge ${cls}">${lbl}</span>`;}
 function staleTag(s){if(!isStale(s))return'';return`<span class="stale-warn"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="8"/><path d="M10 6v4l3 3"/></svg>Stale</span>`;}
 function carrierBadge(c){const cls={UPS:'carrier-ups',USPS:'carrier-usps',FedEx:'carrier-fedex',DHL:'carrier-dhl'}[c]||'carrier-other';return`<span class="carrier-badge ${cls}">${c}</span>`;}
 function dirBadge(d){if(d==='inbound')return`<span class="dir-badge dir-in"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 17V7M6 11l4 4 4-4"/></svg>In</span>`;return`<span class="dir-badge dir-out"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 3v10M6 9l4-4 4 4"/></svg>Out</span>`;}

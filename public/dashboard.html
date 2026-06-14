@@ -788,35 +788,45 @@ body.dark #shiptrack-map{filter:invert(0.9) hue-rotate(180deg)}
 <div class="page-view" id="view-fbainventory">
   <div class="section-header">
     <div><div class="section-title">FBA Inventory</div><div class="section-meta">Units at Amazon facilities</div></div>
-    <button class="btn btn-primary" onclick="saveFBAInventory()">
-      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 10l4 4 8-8"/></svg>
-      Save Changes
+    <button class="btn btn-secondary" onclick="refreshFBAInventoryPage()">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 10a6 6 0 1 0 1.6-4M4 6v4h4"/></svg>
+      Refresh
     </button>
   </div>
 
   <!-- Summary stats -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:28px;max-width:500px">
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px">
     <div class="stat-card gold">
-      <div class="stat-label">Total FBA Units</div>
+      <div class="stat-label">Total SKUs</div>
+      <div class="stat-value" id="fba-inv-total-skus">--</div>
+      <div class="stat-sub">products tracked</div>
+    </div>
+    <div class="stat-card sage">
+      <div class="stat-label">Total Units</div>
       <div class="stat-value" id="fba-inv-total-units">--</div>
       <div class="stat-sub">at Amazon</div>
     </div>
-    <div class="stat-card sage">
-      <div class="stat-label">Est. Proceeds</div>
-      <div class="stat-value" id="fba-inv-total-proceeds">--</div>
-      <div class="stat-sub">from FBA inventory</div>
+    <div class="stat-card">
+      <div class="stat-label">In Stock</div>
+      <div class="stat-value" id="fba-inv-in-stock" style="color:#2A6535">--</div>
+      <div class="stat-sub">SKUs with units</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Out of Stock</div>
+      <div class="stat-value" id="fba-inv-out-stock" style="color:#B44B3C">--</div>
+      <div class="stat-sub">SKUs at zero</div>
     </div>
   </div>
 
-  <!-- Product input table -->
+  <!-- Read-only inventory table -->
   <div class="card">
     <div class="card-header">
-      <div class="card-title">Update FBA Quantities</div>
-      <div class="card-meta">Enter current units at Amazon for each product</div>
+      <div class="card-title">FBA Inventory</div>
+      <div class="card-meta" id="fba-inv-updated">--</div>
     </div>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Product</th><th>Proceeds per Unit</th><th>Units at Amazon</th><th>Est. Proceeds</th></tr></thead>
+        <thead><tr><th>SKU / Product</th><th>Units Available</th><th>Status</th></tr></thead>
         <tbody id="fba-inv-tbody"></tbody>
       </table>
     </div>
@@ -1764,34 +1774,46 @@ function exportReceiptsCSV(){
 
 // ─── FBA INVENTORY PAGE ───────────────────────────────────────────────────────
 async function loadFBAInventoryPage(){
-  if(!products.length)await loadCatalog();
-  if(!fbaInventory.length)await loadInventory();
+  const res=await fetch(`${SUPABASE_URL}/rest/v1/inventory_fba?select=*&order=product_name.asc`,{headers:{'apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`}});
+  if(res.ok)fbaInventory=await res.json();
   renderFBAInventoryPage();
 }
 
-function renderFBAInventoryPage(){
-  const activeProducts=products.filter(p=>p.active);
-  let totalUnits=0,totalProceeds=0;
+async function refreshFBAInventoryPage(){
+  document.getElementById('fba-inv-tbody').innerHTML='<tr><td colspan="3" style="text-align:center;color:var(--stone);padding:24px">Loading...</td></tr>';
+  await loadFBAInventoryPage();
+}
 
-  const rows=activeProducts.map(p=>{
-    const fbaItem=fbaInventory.find(f=>f.product_name===p.name);
-    const qty=fbaItem?.quantity||0;
-    const proceeds=(p.proceeds||0)*qty;
-    totalUnits+=qty;
-    totalProceeds+=proceeds;
-    return`<tr>
-      <td class="td-name">${p.name}</td>
-      <td style="font-size:13px;color:var(--stone)">$${parseFloat(p.proceeds||0).toFixed(2)}</td>
-      <td><input type="number" min="0" value="${qty}" data-product="${p.name}" 
-        style="width:90px;padding:7px 10px;border-radius:var(--r-sm);border:.5px solid var(--cream-bd2);background:var(--ivory-2);font-family:inherit;font-size:13px;text-align:center"
-        oninput="updateFBARow(this)"></td>
-      <td style="font-size:13px;color:#2A6535" id="fba-proceeds-${p.name.replace(/[^a-zA-Z0-9]/g,'_')}">$${proceeds.toFixed(2)}</td>
+function renderFBAInventoryPage(){
+  const items=fbaInventory.slice().sort((a,b)=>(a.product_name||'').localeCompare(b.product_name||''));
+  const totalSKUs=items.length;
+  const totalUnits=items.reduce((s,i)=>s+(i.quantity||0),0);
+  const inStock=items.filter(i=>(i.quantity||0)>0).length;
+  const outStock=totalSKUs-inStock;
+
+  document.getElementById('fba-inv-total-skus').textContent=totalSKUs;
+  document.getElementById('fba-inv-total-units').textContent=totalUnits;
+  document.getElementById('fba-inv-in-stock').textContent=inStock;
+  document.getElementById('fba-inv-out-stock').textContent=outStock;
+
+  const latest=items.reduce((d,i)=>i.updated_at>d?i.updated_at:d,'');
+  if(latest){const dt=new Date(latest);document.getElementById('fba-inv-updated').textContent='Last updated '+dt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}
+
+  const rows=items.map(i=>{
+    const qty=i.quantity||0;
+    const inStockItem=qty>0;
+    const rowBg=inStockItem?'rgba(42,101,53,0.07)':'rgba(180,75,60,0.07)';
+    const badge=inStockItem
+      ?'<span style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:99px;background:rgba(42,101,53,.12);color:#2A6535;font-size:11px;font-weight:500">In Stock</span>'
+      :'<span style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:99px;background:rgba(180,75,60,.12);color:#B44B3C;font-size:11px;font-weight:500">Out of Stock</span>';
+    return`<tr style="background:${rowBg}">
+      <td class="td-name">${i.product_name||'—'}</td>
+      <td style="font-size:13px;font-weight:600">${qty}</td>
+      <td>${badge}</td>
     </tr>`;
   }).join('');
 
-  document.getElementById('fba-inv-tbody').innerHTML=rows;
-  document.getElementById('fba-inv-total-units').textContent=totalUnits;
-  document.getElementById('fba-inv-total-proceeds').textContent='$'+totalProceeds.toFixed(2);
+  document.getElementById('fba-inv-tbody').innerHTML=rows||'<tr><td colspan="3" style="text-align:center;color:var(--stone);padding:24px">No inventory data</td></tr>';
 }
 
 function updateFBARow(input){

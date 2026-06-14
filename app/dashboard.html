@@ -1,0 +1,2215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShipTrack — Private Shipment Concierge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+:root{--ivory:#F9F7F2;--ivory-2:#F3F0E8;--ivory-3:#EAE6DC;--linen:#E8E2D5;--gold:#B8974A;--gold-light:#D4B87A;--gold-pale:#F0E8D0;--charcoal:#1C1A17;--ink:#2E2C28;--stone:#6B6760;--stone-lt:#9B9790;--cream-bd:rgba(28,26,23,.10);--cream-bd2:rgba(28,26,23,.16);--gold-bd:rgba(184,151,74,.25);--shadow-sm:0 1px 3px rgba(28,26,23,.06),0 1px 2px rgba(28,26,23,.04);--shadow-md:0 4px 16px rgba(28,26,23,.08),0 1px 4px rgba(28,26,23,.04);--shadow-lg:0 8px 32px rgba(28,26,23,.10),0 2px 8px rgba(28,26,23,.06);--r-sm:8px;--r-md:14px;--r-lg:20px;--r-xl:28px;--font-display:'Cormorant Garamond',Georgia,serif;--font-body:'DM Sans',system-ui,sans-serif;--t:.2s cubic-bezier(.4,0,.2,1)}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px;-webkit-font-smoothing:antialiased}
+body{font-family:var(--font-body);background:var(--ivory);color:var(--charcoal);min-height:100vh;overflow-x:hidden}
+button{font-family:inherit;cursor:pointer;border:none;background:none}
+input,select,textarea{font-family:inherit}
+a{color:inherit;text-decoration:none}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--linen);border-radius:10px}
+.app{display:flex;min-height:100vh}
+.sidebar{width:240px;flex-shrink:0;background:var(--charcoal);display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:100}
+.sidebar-brand{padding:32px 28px 24px;border-bottom:.5px solid rgba(255,255,255,.08)}
+.brand-mark{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.brand-icon{width:28px;height:28px;background:var(--gold);border-radius:6px;display:flex;align-items:center;justify-content:center}
+.brand-icon svg{width:14px;height:14px;fill:var(--charcoal)}
+.brand-name{font-family:var(--font-display);font-size:18px;font-weight:500;color:#fff;letter-spacing:.02em}
+.brand-tagline{font-size:10px;color:rgba(255,255,255,.35);letter-spacing:.12em;text-transform:uppercase;margin-top:2px}
+.sidebar-nav{flex:1;padding:20px 0;overflow-y:auto}
+.nav-label{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.28);padding:0 28px;margin-bottom:6px;margin-top:16px}
+.nav-label:first-child{margin-top:0}
+.nav-item{display:flex;align-items:center;gap:11px;padding:9px 28px;font-size:13px;color:rgba(255,255,255,.52);transition:var(--t);cursor:pointer;position:relative;letter-spacing:.01em}
+.nav-item:hover{color:rgba(255,255,255,.85);background:rgba(255,255,255,.04)}
+.nav-item.active{color:#fff;background:rgba(184,151,74,.12)}
+.nav-item.active::before{content:'';position:absolute;left:0;top:6px;bottom:6px;width:2.5px;background:var(--gold);border-radius:0 2px 2px 0}
+.nav-item svg{width:15px;height:15px;flex-shrink:0;opacity:.7}
+.nav-item.active svg{opacity:1}
+.nav-badge{margin-left:auto;background:rgba(184,151,74,.18);color:var(--gold-light);font-size:10px;padding:2px 7px;border-radius:99px}
+.nav-badge.danger{background:rgba(180,75,60,.18);color:#D4826E}
+.sidebar-footer{padding:20px 28px;border-top:.5px solid rgba(255,255,255,.08);font-size:11px;color:rgba(255,255,255,.25);letter-spacing:.04em}
+.sidebar-footer span{color:var(--gold)}
+.sync-pulse{display:inline-flex;align-items:center;gap:6px;font-size:10px;color:rgba(255,255,255,.35);padding:8px 28px;letter-spacing:.04em}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.2);flex-shrink:0}
+.sync-dot.active{background:#6AAF75;animation:pulse 2s infinite}
+.sync-dot.error{background:#B47060}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.main{margin-left:240px;flex:1;min-height:100vh;display:flex;flex-direction:column}
+.topbar{background:var(--ivory);border-bottom:.5px solid var(--cream-bd);padding:0 40px;height:64px;display:flex;align-items:center;gap:20px;position:sticky;top:0;z-index:50}
+.topbar-title{font-family:var(--font-display);font-size:22px;font-weight:400;color:var(--charcoal);letter-spacing:.01em;margin-right:auto}
+.search-wrap{position:relative}
+.search-wrap svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);width:14px;height:14px;stroke:var(--stone-lt);pointer-events:none}
+.search-input{background:var(--ivory-2);border:.5px solid var(--cream-bd2);border-radius:var(--r-md);padding:9px 14px 9px 36px;font-size:13px;width:240px;color:var(--charcoal);transition:var(--t);outline:none}
+.search-input::placeholder{color:var(--stone-lt)}
+.search-input:focus{border-color:var(--gold-bd);background:#fff;box-shadow:0 0 0 3px rgba(184,151,74,.08)}
+.topbar-actions{display:flex;align-items:center;gap:10px}
+.btn-icon{width:36px;height:36px;border-radius:var(--r-sm);background:var(--ivory-2);border:.5px solid var(--cream-bd2);display:flex;align-items:center;justify-content:center;transition:var(--t);color:var(--stone);position:relative}
+.btn-icon:hover{background:var(--ivory-3)}
+.btn-icon svg{width:15px;height:15px;stroke:currentColor}
+.notif-dot{position:absolute;top:6px;right:6px;width:7px;height:7px;background:#B47060;border-radius:50%;border:1.5px solid var(--ivory)}
+.topbar-avatar{width:34px;height:34px;border-radius:50%;background:var(--charcoal);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:var(--gold-light);letter-spacing:.05em;cursor:pointer;flex-shrink:0}
+.page-content{padding:36px 40px 60px;flex:1}
+.page-view{display:none}
+.page-view.active{display:block}
+.section-header{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px}
+.section-title{font-family:var(--font-display);font-size:28px;font-weight:400;letter-spacing:.01em}
+.section-meta{font-size:12px;color:var(--stone-lt);letter-spacing:.06em;text-transform:uppercase}
+.stat-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-bottom:32px}
+.stat-card{background:#fff;border:.5px solid var(--cream-bd);border-radius:var(--r-lg);padding:22px 20px;position:relative;overflow:hidden;transition:var(--t);animation:fadeUp .5s ease both}
+.stat-card:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
+.stat-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:transparent}
+.stat-card.gold::after{background:linear-gradient(90deg,var(--gold),var(--gold-light))}
+.stat-card.sage::after{background:#8FAF8A}
+.stat-card.blue::after{background:#6A8FAF}
+.stat-card.amber::after{background:#C4924A}
+.stat-card.rose::after{background:#B47060}
+.stat-card.muted::after{background:var(--stone-lt)}
+.stat-label{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--stone-lt);margin-bottom:10px}
+.stat-value{font-family:var(--font-display);font-size:36px;font-weight:300;line-height:1;letter-spacing:-.01em}
+.stat-sub{font-size:11px;color:var(--stone-lt);margin-top:6px}
+.stat-icon{position:absolute;right:18px;top:18px;width:28px;height:28px;border-radius:var(--r-sm);background:var(--ivory-2);display:flex;align-items:center;justify-content:center}
+.stat-icon svg{width:14px;height:14px;stroke:var(--stone)}
+.card{background:#fff;border:.5px solid var(--cream-bd);border-radius:var(--r-lg);padding:28px;margin-bottom:20px;animation:fadeUp .4s ease both}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;gap:12px;flex-wrap:wrap}
+.card-title{font-family:var(--font-display);font-size:18px;font-weight:400;letter-spacing:.01em}
+.card-meta{font-size:12px;color:var(--stone-lt);letter-spacing:.04em}
+.toolbar{display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap}
+.filter-select{appearance:none;background:var(--ivory-2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236B6760' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 12px center;border:.5px solid var(--cream-bd2);border-radius:var(--r-md);padding:9px 32px 9px 14px;font-size:12px;color:var(--charcoal);cursor:pointer;outline:none;transition:var(--t);font-family:inherit;letter-spacing:.02em}
+.filter-select:focus{border-color:var(--gold-bd);box-shadow:0 0 0 3px rgba(184,151,74,.08)}
+.filter-input{background:var(--ivory-2);border:.5px solid var(--cream-bd2);border-radius:var(--r-md);padding:9px 14px;font-size:12px;color:var(--charcoal);outline:none;transition:var(--t);font-family:inherit;min-width:200px;flex:1}
+.filter-input::placeholder{color:var(--stone-lt)}
+.filter-input:focus{border-color:var(--gold-bd);box-shadow:0 0 0 3px rgba(184,151,74,.08);background:#fff}
+.filter-tabs{display:flex;gap:4px;background:var(--ivory-2);border:.5px solid var(--cream-bd);border-radius:var(--r-md);padding:3px}
+.filter-tab{padding:6px 14px;font-size:12px;border-radius:calc(var(--r-md) - 3px);color:var(--stone);transition:var(--t);letter-spacing:.02em;cursor:pointer}
+.filter-tab.active{background:#fff;color:var(--charcoal);box-shadow:var(--shadow-sm)}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 18px;border-radius:var(--r-md);font-size:12px;font-family:inherit;font-weight:400;letter-spacing:.04em;transition:var(--t);cursor:pointer;white-space:nowrap}
+.btn-primary{background:var(--charcoal);color:#fff;border:1px solid var(--charcoal)}
+.btn-primary:hover{background:var(--ink)}
+.btn-outline{background:transparent;color:var(--charcoal);border:.5px solid var(--cream-bd2)}
+.btn-outline:hover{background:var(--ivory-2)}
+.btn-ghost{background:transparent;color:var(--stone);border:none;padding:9px 12px}
+.btn-ghost:hover{color:var(--charcoal);background:var(--ivory-2)}
+.btn-track{background:var(--ivory-2);color:var(--charcoal);border:.5px solid var(--cream-bd2);padding:5px 11px;font-size:11px;border-radius:var(--r-sm);letter-spacing:.04em;display:inline-flex;align-items:center;gap:5px;transition:var(--t)}
+.btn-track:hover{background:var(--gold-pale);border-color:var(--gold-bd)}
+.btn-track svg{width:11px;height:11px;stroke:currentColor}
+.btn-refresh-row{background:none;border:none;padding:4px 6px;color:var(--stone-lt);border-radius:var(--r-sm);transition:var(--t);cursor:pointer;display:inline-flex;align-items:center}
+.btn-refresh-row:hover{color:var(--charcoal);background:var(--ivory-2)}
+.btn-refresh-row svg{width:13px;height:13px;stroke:currentColor}
+.btn svg{width:13px;height:13px;stroke:currentColor;flex-shrink:0}
+.spinning{animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.table-wrap{overflow-x:auto;border-radius:var(--r-md);border:.5px solid var(--cream-bd)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{padding:11px 14px;text-align:left;font-size:10px;font-weight:400;letter-spacing:.12em;text-transform:uppercase;color:var(--stone-lt);background:var(--ivory-2);border-bottom:.5px solid var(--cream-bd);white-space:nowrap}
+thead th:first-child{padding-left:20px;border-radius:var(--r-md) 0 0 0}
+thead th:last-child{padding-right:20px;border-radius:0 var(--r-md) 0 0}
+tbody tr{border-bottom:.5px solid var(--cream-bd);transition:background var(--t)}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--ivory)}
+tbody td{padding:13px 14px;vertical-align:middle;color:var(--ink)}
+tbody td:first-child{padding-left:20px}
+tbody td:last-child{padding-right:20px}
+.td-tracking{font-family:'Courier New',monospace;font-size:11px;color:var(--stone);letter-spacing:.04em}
+.td-muted{color:var(--stone-lt);font-size:12px}
+.td-name{font-size:13px;font-weight:400}
+.td-sub{font-size:11px;color:var(--stone-lt);margin-top:2px}
+.td-actions{display:flex;align-items:center;gap:4px}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:99px;font-size:11px;letter-spacing:.04em;white-space:nowrap}
+.badge::before{content:'';width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.badge-transit{background:#EAF0F5;color:#3D6B8A}.badge-transit::before{background:#6A8FAF}
+.badge-ofd{background:#EDF5EA;color:#3A6B3A}.badge-ofd::before{background:#8FAF8A}
+.badge-delivered{background:#EFF6EE;color:#2A6535}.badge-delivered::before{background:#6AAF75}
+.badge-delayed{background:#F6F0E8;color:#7A5A28}.badge-delayed::before{background:#C4924A}
+.badge-exception{background:#F6EDEA;color:#8A3A2A}.badge-exception::before{background:#B47060}
+.badge-created{background:var(--ivory-2);color:var(--stone)}.badge-created::before{background:var(--stone-lt)}
+.badge-stale{background:#F3EDFA;color:#6A4A8A}.badge-stale::before{background:#9A7AAF}
+.badge-unknown{background:var(--ivory-3);color:var(--stone)}.badge-unknown::before{background:var(--linen)}
+.badge-failed{background:#FDF0EA;color:#8A5A2A}.badge-failed::before{background:#C48A4A}
+.badge-returned{background:#F0F0F0;color:#555}.badge-returned::before{background:#999}
+.badge-lost{background:#1a1a2e;color:#ff4444;border:1px solid #ff4444;}
+.carrier-badge{display:inline-block;padding:3px 9px;border-radius:var(--r-sm);font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;border:.5px solid}
+.carrier-ups{background:#FDF4E8;color:#7A5228;border-color:rgba(122,82,40,.15)}
+.carrier-usps{background:#EAF0F8;color:#2A4A7A;border-color:rgba(42,74,122,.15)}
+.carrier-fedex{background:#EEE8F6;color:#4A2A7A;border-color:rgba(74,42,122,.15)}
+.carrier-dhl{background:#FDF4E0;color:#7A6028;border-color:rgba(122,96,40,.15)}
+.carrier-other{background:var(--ivory-2);color:var(--stone);border-color:var(--cream-bd)}
+.dir-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;letter-spacing:.04em}
+.dir-badge svg{width:11px;height:11px;stroke:currentColor}
+.dir-in{color:#3D6B8A}.dir-out{color:var(--stone)}
+.stale-warn{display:inline-flex;align-items:center;gap:4px;font-size:10px;color:#6A4A8A;background:#F3EDFA;padding:2px 8px;border-radius:99px;margin-left:4px}
+.stale-warn svg{width:10px;height:10px;stroke:currentColor}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.form-group{display:flex;flex-direction:column;gap:7px}
+.form-group.full{grid-column:1/-1}
+.form-label{font-size:11px;letter-spacing:.10em;text-transform:uppercase;color:var(--stone)}
+.form-control{background:var(--ivory-2);border:.5px solid var(--cream-bd2);border-radius:var(--r-md);padding:11px 16px;font-size:13px;color:var(--charcoal);font-family:inherit;outline:none;transition:var(--t);appearance:none}
+.form-control::placeholder{color:var(--stone-lt)}
+.form-control:focus{border-color:var(--gold-bd);box-shadow:0 0 0 3px rgba(184,151,74,.08);background:#fff}
+.form-select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236B6760' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:38px;cursor:pointer}
+textarea.form-control{min-height:88px;resize:vertical;line-height:1.6}
+.form-divider{grid-column:1/-1;height:.5px;background:var(--cream-bd);margin:8px 0}
+.form-msg{padding:12px 16px;border-radius:var(--r-md);font-size:13px;margin-top:16px;display:none}
+.form-msg.success{background:#EFF6EE;color:#2A6535;border:.5px solid rgba(42,101,53,.15)}
+.form-msg.error{background:#F6EDEA;color:#8A3A2A;border:.5px solid rgba(138,58,42,.15)}
+.form-msg.warn{background:#F6F0E8;color:#7A5A28;border:.5px solid rgba(122,90,40,.15)}
+.alert-item{display:flex;gap:16px;padding:18px 0;border-bottom:.5px solid var(--cream-bd)}
+.alert-item:last-child{border-bottom:none}
+.alert-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.alert-dot.red{background:#B47060}.alert-dot.amber{background:#C4924A}
+.alert-dot.blue{background:#6A8FAF}.alert-dot.green{background:#6AAF75}
+.alert-dot.purple{background:#9A7AAF}
+.alert-title{font-size:13px;color:var(--charcoal);line-height:1.4}
+.alert-sub{font-size:12px;color:var(--stone-lt);margin-top:3px}
+.import-zone{border:1px dashed var(--linen);border-radius:var(--r-lg);padding:40px;text-align:center;cursor:pointer;transition:var(--t)}
+.import-zone:hover{border-color:var(--gold-bd);background:var(--gold-pale)}
+.import-icon{width:48px;height:48px;background:var(--ivory-2);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+.import-icon svg{width:20px;height:20px;stroke:var(--stone)}
+.import-zone:hover .import-icon{background:var(--gold-pale)}
+.import-zone:hover .import-icon svg{stroke:var(--gold)}
+.import-label{font-size:14px;color:var(--charcoal);margin-bottom:6px}
+.import-hint{font-size:12px;color:var(--stone-lt)}
+.settings-row{display:flex;align-items:center;justify-content:space-between;padding:16px 0;border-bottom:.5px solid var(--cream-bd)}
+.settings-row:last-child{border-bottom:none}
+.settings-label{font-size:13px;color:var(--charcoal)}
+.settings-sub{font-size:12px;color:var(--stone-lt);margin-top:3px}
+.toggle{width:36px;height:20px;background:var(--linen);border-radius:99px;position:relative;cursor:pointer;transition:var(--t);border:none;flex-shrink:0}
+.toggle.on{background:var(--gold)}
+.toggle::after{content:'';width:14px;height:14px;background:#fff;border-radius:50%;position:absolute;top:3px;left:3px;transition:var(--t);box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.toggle.on::after{left:19px}
+.sync-stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+.sync-stat{background:var(--ivory-2);border-radius:var(--r-md);padding:16px;text-align:center}
+.sync-stat-value{font-family:var(--font-display);font-size:28px;font-weight:300;margin-bottom:4px}
+.sync-stat-label{font-size:11px;color:var(--stone-lt);letter-spacing:.06em;text-transform:uppercase}
+.sync-history-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:.5px solid var(--cream-bd);font-size:12px}
+.sync-history-row:last-child{border-bottom:none}
+.sync-ok{color:#2A6535}.sync-err{color:#8A3A2A}
+.api-config-row{display:flex;align-items:center;gap:10px;padding:14px 0;border-bottom:.5px solid var(--cream-bd)}
+.api-config-row:last-child{border-bottom:none}
+.api-status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.api-status-dot.connected{background:#6AAF75}
+.api-status-dot.missing{background:var(--linen)}
+.integration-row{display:flex;align-items:center;gap:16px;padding:18px 0;border-bottom:.5px solid var(--cream-bd)}
+.integration-row:last-child{border-bottom:none}
+.integration-icon{width:40px;height:40px;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px}
+.integration-name{font-size:13px;color:var(--charcoal)}
+.integration-desc{font-size:12px;color:var(--stone-lt);margin-top:2px}
+.pill-connected{background:#EFF6EE;color:#2A6535;border:.5px solid rgba(42,101,53,.12);padding:5px 14px;border-radius:99px;font-size:11px}
+.pill-pending{background:#F6F0E8;color:#7A5A28;border:.5px solid rgba(122,90,40,.12);padding:5px 14px;border-radius:99px;font-size:11px}
+.pill-missing{background:var(--ivory-3);color:var(--stone-lt);border:.5px solid var(--cream-bd);padding:5px 14px;border-radius:99px;font-size:11px}
+.dash-grid{display:grid;grid-template-columns:1fr 340px;gap:20px}
+@media(max-width:1280px){.stat-grid{grid-template-columns:repeat(3,1fr)}.dash-grid{grid-template-columns:1fr}}
+
+/* ── DARK MODE ─────────────────────────────────────────────────────────────── */
+body.dark{
+  --ivory:#141210;
+  --ivory-2:#1C1A17;
+  --ivory-3:#242220;
+  --linen:#2E2C28;
+  --charcoal:#F0EDE8;
+  --ink:#D8D4CC;
+  --stone:#9B9790;
+  --stone-lt:#6B6760;
+  --cream-bd:rgba(240,237,232,.08);
+  --cream-bd2:rgba(240,237,232,.14);
+  --gold-bd:rgba(184,151,74,.35);
+  --gold-pale:rgba(184,151,74,.12);
+}
+body.dark .sidebar{background:#0E0D0B}
+body.dark .sidebar-brand{border-bottom-color:rgba(255,255,255,.06)}
+body.dark .sidebar-footer{border-top-color:rgba(255,255,255,.06)}
+body.dark .topbar{background:#141210;border-bottom-color:rgba(240,237,232,.08)}
+body.dark .card{background:#1C1A17;border-color:rgba(240,237,232,.08)}
+body.dark .stat-card{background:#1C1A17;border-color:rgba(240,237,232,.08)}
+body.dark table thead th{background:#1C1A17}
+body.dark tbody tr:hover{background:#242220}
+body.dark .table-wrap{border-color:rgba(240,237,232,.08)}
+body.dark .form-control{background:#1C1A17;border-color:rgba(240,237,232,.14);color:#F0EDE8}
+body.dark .form-control:focus{background:#242220}
+body.dark .filter-input{background:#1C1A17;border-color:rgba(240,237,232,.14);color:#F0EDE8}
+body.dark .filter-select{background-color:#1C1A17;border-color:rgba(240,237,232,.14);color:#F0EDE8}
+body.dark .filter-tabs{background:#1C1A17;border-color:rgba(240,237,232,.08)}
+body.dark .filter-tab.active{background:#242220;color:#F0EDE8}
+body.dark .btn-outline{border-color:rgba(240,237,232,.14);color:#F0EDE8}
+body.dark .btn-outline:hover{background:#242220}
+body.dark .btn-icon{background:#1C1A17;border-color:rgba(240,237,232,.14)}
+body.dark .btn-icon:hover{background:#242220}
+body.dark .btn-track{background:#1C1A17;border-color:rgba(240,237,232,.14);color:#D8D4CC}
+body.dark .btn-track:hover{background:rgba(184,151,74,.15);border-color:var(--gold-bd)}
+body.dark .search-input{background:#1C1A17;border-color:rgba(240,237,232,.14);color:#F0EDE8}
+body.dark .search-input:focus{background:#242220}
+body.dark .import-zone{border-color:#2E2C28}
+body.dark .import-zone:hover{background:rgba(184,151,74,.08)}
+body.dark .modal-inner{background:#1C1A17}
+body.dark #edit-modal > div,
+body.dark #mb-modal > div,
+body.dark #mb-shipments-modal > div,
+body.dark #product-modal > div,
+body.dark #fba-modal > div{background:#1C1A17}
+body.dark .toggle{background:#2E2C28}
+body.dark .notif-dot{border-color:#141210}
+body.dark #shiptrack-map{filter:invert(0.9) hue-rotate(180deg)}
+.tag-pill{display:inline-block;padding:2px 8px;background:var(--gold-pale);color:#7A5A28;border-radius:99px;font-size:10px;letter-spacing:.04em;margin:1px 2px}
+.empty-state{text-align:center;padding:56px 40px;color:var(--stone-lt)}
+.empty-icon{width:52px;height:52px;background:var(--ivory-2);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+.empty-icon svg{width:22px;height:22px;stroke:var(--stone-lt)}
+.empty-title{font-family:var(--font-display);font-size:18px;font-weight:400;color:var(--stone);margin-bottom:8px}
+.empty-sub{font-size:13px}
+.toast-wrap{position:fixed;bottom:28px;right:28px;z-index:9999;display:flex;flex-direction:column;gap:10px}
+.toast{background:var(--charcoal);color:#fff;padding:13px 20px;border-radius:var(--r-md);font-size:13px;box-shadow:var(--shadow-lg);animation:fadeUp .3s ease both;display:flex;align-items:center;gap:10px;min-width:260px}
+.toast svg{width:15px;height:15px;stroke:var(--gold-light);flex-shrink:0}
+.toast.success svg{stroke:#6AAF75}
+.toast.warn svg{stroke:#C4924A}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-mark">
+      <div class="brand-icon"><svg viewBox="0 0 20 20"><path d="M2 6l8-3 8 3v8l-8 3-8-3V6z"/><path d="M10 3v14M2 6l8 3 8-3" fill="none" stroke="#1C1A17" stroke-width="1.5" stroke-linejoin="round"/></svg></div>
+      <span class="brand-name">ShipTrack</span>
+    </div>
+    <div class="brand-tagline">Private Shipment Concierge</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-label">Overview</div>
+    <div class="nav-item active" onclick="nav('dashboard')">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="7" height="7" rx="1.5"/><rect x="11" y="2" width="7" height="7" rx="1.5"/><rect x="2" y="11" width="7" height="7" rx="1.5"/><rect x="11" y="11" width="7" height="7" rx="1.5"/></svg>
+      Dashboard
+    </div>
+    <div class="nav-label">Shipments</div>
+    <div class="nav-item" onclick="nav('all')">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 5h14M3 10h14M3 15h10"/></svg>
+      All Shipments <span class="nav-badge" id="nav-all-count">0</span>
+    </div>
+    <div class="nav-item" onclick="nav('inbound')">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 3v10M6 9l4 4 4-4"/><path d="M3 17h14" stroke-linecap="round"/></svg>
+      Inbound <span class="nav-badge" id="nav-in-count">0</span>
+    </div>
+    <div class="nav-item" onclick="nav('outbound')">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 17V7M6 11l4-4 4 4"/><path d="M3 3h14" stroke-linecap="round"/></svg>
+      Outbound <span class="nav-badge" id="nav-out-count">0</span>
+    </div>
+    <div class="nav-label">Actions</div>
+    <div class="nav-item" onclick="nav('add')">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="8"/><path d="M10 6v8M6 10h8"/></svg>
+      Add Shipment
+    </div>
+    <div class="nav-item" onclick="nav('bulk')">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 5h14M3 9h14M3 13h8"/><path d="M15 12v6M12 15h6"/></svg>
+      Bulk Add
+    </div>
+    <div class="nav-item" onclick="nav('alerts')">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 2a6 6 0 016 6v3l2 3H2l2-3V8a6 6 0 016-6z"/><path d="M8 17a2 2 0 004 0"/></svg>
+      Alerts <span class="nav-badge danger" id="nav-alert-count">0</span>
+    </div>
+    <div class="nav-label">System</div>
+    <div class="nav-item" onclick="nav('mailboxes')">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="16" height="12" rx="2"/><path d="M2 8h16M6 4v4M14 4v4"/></svg>
+      Mailboxes <span class="nav-badge" id="nav-mb-count">0</span>
+    </div>
+    <div class="nav-item" onclick="nav('map')">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2l-4 2-4-2v14l4 2 4-2 4 2V4l-4-2z"/><path d="M8 4v14M12 2v14"/></svg>
+      Network Map
+    </div>
+    <div class="nav-item" onclick="nav('inventory')">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 7l8-4 8 4v6l-8 4-8-4V7z"/><path d="M10 3v10M2 7l8 4 8-4"/></svg>
+      Inventory <span class="nav-badge" id="nav-inv-count">0</span>
+    </div>
+    <div class="nav-item" onclick="nav('fbainventory')">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 7h14M3 7l2-4h10l2 4M3 7v9a1 1 0 001 1h12a1 1 0 001-1V7"/><path d="M8 11h4"/></svg>
+      FBA Inventory
+    </div>
+    <div class="nav-item" onclick="nav('catalog')">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 2h12a1 1 0 011 1v14a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z"/><path d="M7 6h6M7 10h6M7 14h4"/></svg>
+      Product Catalog
+    </div>
+    <div class="nav-item" onclick="nav('fbashipments')">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 7h14M3 7l2-4h10l2 4M3 7v9a1 1 0 001 1h12a1 1 0 001-1V7"/><path d="M8 11h4"/></svg>
+      FBA Shipments
+    </div>
+    <div class="nav-item" onclick="nav('receipts')">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 2h12a1 1 0 011 1v14a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z"/><path d="M7 6h6M7 10h6M7 14h4"/></svg>
+      Receipts <span class="nav-badge" id="nav-receipts-count">0</span>
+    </div>
+    <div class="nav-item" onclick="nav('import')">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 13v4h14v-4M10 3v10M7 10l3 3 3-3"/></svg>
+      Import / CSV
+    </div>
+    <div class="nav-item" onclick="nav('integrations')">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="3"/><path d="M10 2v3M10 15v3M2 10h3M15 10h3M4.2 4.2l2.1 2.1M13.7 13.7l2.1 2.1M4.2 15.8l2.1-2.1M13.7 6.3l2.1-2.1"/></svg>
+      Integrations <span class="nav-badge" id="nav-sync-badge" style="display:none">Live</span>
+    </div>
+    <div class="nav-item" onclick="nav('settings')">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="2.5"/><path d="M10 3v2M10 15v2M3 10h2M15 10h2M5.05 5.05l1.41 1.41M13.54 13.54l1.41 1.41M5.05 14.95l1.41-1.41M13.54 6.46l1.41-1.41"/></svg>
+      Settings
+    </div>
+  </nav>
+  <div class="sync-pulse" id="sync-pulse">
+    <div class="sync-dot" id="sync-dot"></div>
+    <span id="sync-label">Not synced</span>
+  </div>
+  <div class="sidebar-footer">v3.1 &nbsp;·&nbsp; <span>ShipTrack</span></div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+<header class="topbar">
+  <div class="topbar-title" id="topbar-title">Dashboard</div>
+  <div class="search-wrap">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="9" r="6"/><path d="M15 15l-3-3"/></svg>
+    <input class="search-input" type="text" placeholder="Search shipments…" id="globalSearch" oninput="onGlobalSearch()">
+  </div>
+  <div class="topbar-actions">
+    <button class="btn-icon" onclick="toggleDarkMode()" title="Toggle dark mode" id="dark-toggle">
+      <svg id="dark-icon-moon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 11.5A7 7 0 1 1 8.5 3a5 5 0 0 0 8.5 8.5z"/></svg>
+      <svg id="dark-icon-sun" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" style="display:none"><circle cx="10" cy="10" r="4"/><path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.93 4.93l1.41 1.41M13.66 13.66l1.41 1.41M4.93 15.07l1.41-1.41M13.66 6.34l1.41-1.41"/></svg>
+    </button>
+    <button class="btn-icon" onclick="refreshAllActive()" title="Refresh" id="refresh-btn">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 10a6 6 0 0110.9-3.4"/><path d="M16 10a6 6 0 01-10.9 3.4"/><path d="M16 6.5V10h-3.5"/><path d="M4 13.5V10h3.5"/></svg>
+    </button>
+    <button class="btn-icon" onclick="nav('add')" title="Add shipment">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 4v12M4 10h12"/></svg>
+    </button>
+    <button class="btn-icon" onclick="nav('alerts')" title="Alerts">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 2a6 6 0 016 6v3l2 3H2l2-3V8a6 6 0 016-6z"/><path d="M8 17a2 2 0 004 0"/></svg>
+      <div class="notif-dot" id="notif-dot" style="display:none"></div>
+    </button>
+    <div class="topbar-avatar">JD</div>
+  </div>
+</header>
+
+<div class="page-content">
+
+<!-- DASHBOARD -->
+<div class="page-view active" id="view-dashboard">
+  <div class="section-header">
+    <div><div class="section-title">Good morning.</div><div class="section-meta" id="dash-date"></div></div>
+    <button class="btn btn-outline" onclick="refreshAllActive()"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 10a6 6 0 0110.9-3.4"/><path d="M16 10a6 6 0 01-10.9 3.4"/><path d="M16 6.5V10h-3.5"/><path d="M4 13.5V10h3.5"/></svg>Refresh All Active</button>
+  </div>
+  <div class="stat-grid">
+    <div class="stat-card gold" style="cursor:pointer" onclick="showFilteredShipments('active')" title="View active shipments"><div class="stat-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 6l8-3 8 3v8l-8 3-8-3V6z"/></svg></div><div class="stat-label">Active Shipments</div><div class="stat-value" id="s-active">—</div><div class="stat-sub">in motion</div></div>
+    <div class="stat-card sage" style="cursor:pointer" onclick="showFilteredShipments('delivered-today')" title="View delivered today"><div class="stat-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 10l4 4 8-8"/></svg></div><div class="stat-label">Delivered Today</div><div class="stat-value" id="s-delivered">—</div><div class="stat-sub">confirmed</div></div>
+    <div class="stat-card blue" style="cursor:pointer" onclick="showFilteredShipments('ofd')" title="View out for delivery"><div class="stat-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 10h14M10 3l7 7-7 7"/></svg></div><div class="stat-label">Out for Delivery</div><div class="stat-value" id="s-ofd">—</div><div class="stat-sub">arriving today</div></div>
+    <div class="stat-card amber" style="cursor:pointer" onclick="showFilteredShipments('delayed')" title="View delayed shipments"><div class="stat-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="8"/><path d="M10 6v4M10 14h.01"/></svg></div><div class="stat-label">Delayed</div><div class="stat-value" id="s-delayed">—</div><div class="stat-sub">past expected date</div></div>
+    <div class="stat-card rose" style="cursor:pointer" onclick="showFilteredShipments('exceptions')" title="View exceptions"><div class="stat-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 3l7 14H3L10 3z"/><path d="M10 9v4M10 15h.01"/></svg></div><div class="stat-label">Exceptions</div><div class="stat-value" id="s-exc">—</div><div class="stat-sub">needs attention</div></div>
+    <div class="stat-card muted" style="cursor:pointer" onclick="showFilteredShipments('stale')" title="View stale shipments"><div class="stat-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="8"/><path d="M10 6v4l3 3"/></svg></div><div class="stat-label">Stale</div><div class="stat-value" id="s-stale">—</div><div class="stat-sub">3+ days no movement</div></div>
+  </div>
+  <div class="dash-grid">
+    <div class="card" style="animation-delay:.2s">
+      <div class="card-header"><div class="card-title">Recent Shipments</div><button class="btn btn-ghost" onclick="nav('all')" style="font-size:12px;color:var(--stone)">View all →</button></div>
+      <div class="table-wrap"><table><thead><tr><th>Tracking</th><th>Carrier</th><th>Contact</th><th>Status</th><th>Est. Delivery</th><th>Last Update</th><th></th></tr></thead><tbody id="dash-tbody"></tbody></table></div>
+    </div>
+    <div>
+      <div class="card" style="animation-delay:.25s"><div class="card-header"><div class="card-title">Active Alerts</div><button class="btn btn-ghost" onclick="nav('alerts')" style="font-size:12px;color:var(--stone)">All →</button></div><div id="dash-alerts"></div></div>
+      <div class="card" style="animation-delay:.30s"><div class="card-header"><div class="card-title">By Carrier</div></div><div id="carrier-breakdown"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ALL SHIPMENTS -->
+<div class="page-view" id="view-all">
+  <div class="section-header">
+    <div class="section-title">All Shipments</div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-outline" onclick="refreshAllActive()"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 10a6 6 0 0110.9-3.4"/><path d="M16 10a6 6 0 01-10.9 3.4"/><path d="M16 6.5V10h-3.5"/><path d="M4 13.5V10h3.5"/></svg>Refresh Active</button>
+      <button class="btn btn-primary" onclick="nav('add')"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 4v12M4 10h12"/></svg>Add shipment</button>
+    </div>
+  </div>
+  <div class="toolbar">
+    <input class="filter-input" type="text" id="filter-search" placeholder="Search tracking, contact, description…" oninput="renderMainTable()">
+    <select class="filter-select" id="filter-carrier" onchange="renderMainTable()"><option value="">All carriers</option><option>UPS</option><option>USPS</option><option>FedEx</option><option>DHL</option></select>
+    <select class="filter-select" id="filter-status" onchange="renderMainTable()"><option value="">All statuses</option><option>Label Created</option><option>In Transit</option><option>Out for Delivery</option><option>Delivered</option><option>Delayed</option><option>Delivery Exception</option><option>Failed Attempt</option><option>Returned</option><option>Lost</option><option>Unknown</option></select>
+    <div class="filter-tabs" id="dir-tabs"><div class="filter-tab active" onclick="setDirTab(this,'')">All</div><div class="filter-tab" onclick="setDirTab(this,'inbound')">Inbound</div><div class="filter-tab" onclick="setDirTab(this,'outbound')">Outbound</div></div>
+  </div>
+  <div class="table-wrap"><table><thead><tr><th>Tracking #</th><th>Carrier</th><th>Dir.</th><th>Contact / Customer</th><th>Description</th><th>Status</th><th>Est. Delivery</th><th>Last Update</th><th>Actions</th></tr></thead><tbody id="main-tbody"></tbody></table></div>
+  <div class="empty-state" id="noResults" style="display:none"><div class="empty-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 6l8-3 8 3v8l-8 3-8-3V6z"/></svg></div><div class="empty-title">No shipments found</div><div class="empty-sub">Adjust filters or add a new shipment.</div></div>
+</div>
+
+<!-- INBOUND -->
+<div class="page-view" id="view-inbound">
+  <div class="section-header"><div class="section-title">Inbound Packages</div><div class="section-meta">Arriving to you</div></div>
+  <div class="toolbar">
+    <input class="filter-input" type="text" id="in-search" placeholder="Search…" oninput="renderDirTable('in')">
+    <select class="filter-select" id="in-status" onchange="renderDirTable('in')"><option value="">All statuses</option><option>Label Created</option><option>In Transit</option><option>Out for Delivery</option><option>Delivered</option><option>Delayed</option><option>Delivery Exception</option><option>Returned</option><option>Lost</option></select>
+  </div>
+  <div class="table-wrap"><table><thead><tr><th>Tracking #</th><th>Carrier</th><th>Vendor / Sender</th><th>Description</th><th>Status</th><th>Est. Delivery</th><th>Last Update</th><th>Actions</th></tr></thead><tbody id="in-tbody"></tbody></table></div>
+  <div class="empty-state" id="in-empty" style="display:none"><div class="empty-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 17V7M6 11l4-4 4 4"/></svg></div><div class="empty-title">No inbound shipments</div><div class="empty-sub">Configure Gmail auto-sync in Integrations.</div></div>
+</div>
+
+<!-- OUTBOUND -->
+<div class="page-view" id="view-outbound">
+  <div class="section-header"><div class="section-title">Outbound Shipments</div><div class="section-meta">Sent from you</div></div>
+  <div class="toolbar">
+    <input class="filter-input" type="text" id="out-search" placeholder="Search…" oninput="renderDirTable('out')">
+    <select class="filter-select" id="out-status" onchange="renderDirTable('out')"><option value="">All statuses</option><option>Label Created</option><option>In Transit</option><option>Out for Delivery</option><option>Delivered</option><option>Delayed</option><option>Delivery Exception</option><option>Returned</option><option>Lost</option></select>
+  </div>
+  <div class="table-wrap"><table><thead><tr><th>Tracking #</th><th>Carrier</th><th>Customer / Recipient</th><th>Description</th><th>Status</th><th>Est. Delivery</th><th>Cost</th><th>Actions</th></tr></thead><tbody id="out-tbody"></tbody></table></div>
+  <div class="empty-state" id="out-empty" style="display:none"><div class="empty-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 3v10M6 9l4-4 4 4"/></svg></div><div class="empty-title">No outbound shipments</div><div class="empty-sub">Import Pirate Ship CSV or configure auto-sync.</div></div>
+</div>
+
+<!-- ADD SHIPMENT -->
+<div class="page-view" id="view-add">
+  <div class="section-header"><div class="section-title">Add Shipment</div><div class="section-meta">Manual entry</div></div>
+  <div class="card" style="max-width:820px">
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Tracking Number *</label><input class="form-control" type="text" id="f-tracking" placeholder="1Z999AA10123456784"></div>
+      <div class="form-group"><label class="form-label">Carrier *</label><select class="form-control form-select" id="f-carrier"><option value="">Select carrier</option><option>UPS</option><option>USPS</option><option>FedEx</option><option>DHL</option><option>Other</option></select></div>
+      <div class="form-group"><label class="form-label">Direction *</label><select class="form-control form-select" id="f-direction"><option value="inbound">Inbound — Arriving to me</option><option value="outbound">Outbound — Sent by me</option></select></div>
+      <div class="form-group"><label class="form-label">Current Status</label><select class="form-control form-select" id="f-status"><option>Unknown</option><option>Label Created</option><option>In Transit</option><option>Out for Delivery</option><option>Delivered</option><option>Delayed</option><option>Delivery Exception</option><option>Returned</option><option>Lost</option></select></div>
+      <div class="form-group"><label class="form-label">Customer / Sender</label><input class="form-control" type="text" id="f-contact" placeholder="Name or company"></div>
+      <div class="form-group"><label class="form-label">Expected Delivery</label><input class="form-control" type="date" id="f-date"></div>
+      <div class="form-divider"></div>
+      <div class="form-group full"><label class="form-label">Description / Order Name</label><input class="form-control" type="text" id="f-desc" placeholder="e.g. Camera lens, Melaleuca order #12345"></div>
+      <div class="form-group"><label class="form-label">Order Number</label><input class="form-control" type="text" id="f-order" placeholder="ORD-12345"></div>
+      <div class="form-group"><label class="form-label">Cost</label><input class="form-control" type="text" id="f-cost" placeholder="$0.00"></div>
+      <div class="form-group full"><label class="form-label">Tags <span style="color:var(--stone-lt);text-transform:none;letter-spacing:0">(comma separated)</span></label><input class="form-control" type="text" id="f-tags" placeholder="electronics, returns, fragile"></div>
+      <div class="form-group full"><label class="form-label">Notes</label><textarea class="form-control" id="f-notes" placeholder="Any additional context…"></textarea></div>
+    </div>
+    <div style="margin-top:24px;display:flex;gap:12px">
+      <button class="btn btn-primary" onclick="addManual()">Save Shipment</button>
+      <button class="btn btn-outline" onclick="clearForm()">Clear</button>
+    </div>
+    <div class="form-msg" id="add-msg"></div>
+  </div>
+</div>
+
+<!-- BULK ADD -->
+<div class="page-view" id="view-bulk">
+  <div class="section-header"><div class="section-title">Bulk Add Shipments</div><div class="section-meta">Add multiple tracking numbers at once</div></div>
+  <div class="card" style="max-width:820px">
+    <div class="card-header">
+      <div class="card-title">Paste Tracking Numbers</div>
+      <div class="card-meta">One per line — carrier auto-detected</div>
+    </div>
+    <div class="form-grid">
+      <div class="form-group full">
+        <label class="form-label">Tracking Numbers <span style="color:var(--stone-lt);text-transform:none;letter-spacing:0">(one per line)</span></label>
+        <textarea class="form-control" id="bulk-tracking" style="min-height:180px;font-family:'Courier New',monospace;font-size:12px" placeholder="1Z999AA10123456784&#10;9400111899223397521304&#10;748999999999001&#10;..."></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Direction</label>
+        <select class="form-control form-select" id="bulk-direction">
+          <option value="inbound">Inbound — Arriving to me</option>
+          <option value="outbound">Outbound — Sent by me</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Contact / Customer <span style="color:var(--stone-lt);text-transform:none;letter-spacing:0">(optional)</span></label>
+        <input class="form-control" type="text" id="bulk-contact" placeholder="Applied to all shipments">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description <span style="color:var(--stone-lt);text-transform:none;letter-spacing:0">(optional)</span></label>
+        <input class="form-control" type="text" id="bulk-desc" placeholder="e.g. Melaleuca batch May">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tags <span style="color:var(--stone-lt);text-transform:none;letter-spacing:0">(optional)</span></label>
+        <input class="form-control" type="text" id="bulk-tags" placeholder="batch, may-2026">
+      </div>
+    </div>
+    <div style="margin-top:24px;display:flex;gap:12px;align-items:center">
+      <button class="btn btn-primary" onclick="bulkAdd()">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 4v12M4 10h12"/></svg>
+        Import All
+      </button>
+      <button class="btn btn-outline" onclick="document.getElementById('bulk-tracking').value=''">Clear</button>
+      <span id="bulk-progress" style="font-size:12px;color:var(--stone-lt)"></span>
+    </div>
+    <div id="bulk-result" style="margin-top:16px"></div>
+  </div>
+</div>
+
+<!-- NETWORK MAP -->
+<div class="page-view" id="view-map">
+  <div class="section-header">
+    <div><div class="section-title">Network Map</div><div class="section-meta">All mailbox locations & warehouse</div></div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--stone)"><div style="width:12px;height:12px;border-radius:50%;background:#B8974A;border:2px solid #fff;box-shadow:0 0 0 2px #B8974A"></div>Warehouse</div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--stone)"><div style="width:12px;height:12px;border-radius:50%;background:#6A8FAF;border:2px solid #fff;box-shadow:0 0 0 2px #6A8FAF"></div>Mailbox</div>
+    </div>
+  </div>
+  <div class="card" style="padding:0;overflow:hidden">
+    <div id="shiptrack-map" style="height:600px;width:100%;border-radius:var(--r-lg)"></div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:20px">
+    <div class="card" style="text-align:center;padding:20px">
+      <div style="font-family:var(--font-display);font-size:32px;font-weight:300" id="map-stat-mailboxes">—</div>
+      <div style="font-size:11px;color:var(--stone-lt);letter-spacing:.1em;text-transform:uppercase;margin-top:4px">Mailbox Locations</div>
+    </div>
+    <div class="card" style="text-align:center;padding:20px">
+      <div style="font-family:var(--font-display);font-size:32px;font-weight:300" id="map-stat-states">—</div>
+      <div style="font-size:11px;color:var(--stone-lt);letter-spacing:.1em;text-transform:uppercase;margin-top:4px">States Covered</div>
+    </div>
+    <div class="card" style="text-align:center;padding:20px">
+      <div style="font-family:var(--font-display);font-size:32px;font-weight:300" id="map-stat-active">—</div>
+      <div style="font-size:11px;color:var(--stone-lt);letter-spacing:.1em;text-transform:uppercase;margin-top:4px">Active Shipments</div>
+    </div>
+  </div>
+</div>
+
+<!-- MAILBOXES -->
+<div class="page-view" id="view-mailboxes">
+  <div class="section-header">
+    <div><div class="section-title">Mailbox Directory</div><div class="section-meta" id="mb-count-label">— mailboxes</div></div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-outline" onclick="exportMailboxCSV()">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 13v4h14v-4M10 3v10M7 10l3 3 3-3"/></svg>
+        Export CSV
+      </button>
+      <button class="btn btn-primary" onclick="openAddMailbox()">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 4v12M4 10h12"/></svg>
+        Add Mailbox
+      </button>
+    </div>
+  </div>
+  <div class="toolbar">
+    <input class="filter-input" type="text" id="mb-search" placeholder="Search name, email, address…" oninput="renderMailboxes()">
+    <select class="filter-select" id="mb-state" onchange="renderMailboxes()">
+      <option value="">All states</option>
+      <option>DE</option><option>NJ</option><option>NH</option><option>PA</option>
+      <option>VA</option><option>NC</option><option>OH</option><option>MD</option>
+      <option>GA</option><option>FL</option>
+    </select>
+    <div class="filter-tabs" id="mb-status-tabs">
+      <div class="filter-tab active" onclick="setMbTab(this,'all')">All</div>
+      <div class="filter-tab" onclick="setMbTab(this,'active')">Active</div>
+      <div class="filter-tab" onclick="setMbTab(this,'inactive')">Closed</div>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>#</th><th>Name</th><th>Email</th><th>Phone</th><th>Address</th><th>Monthly Cost</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody id="mb-tbody"></tbody>
+    </table>
+  </div>
+  <div class="empty-state" id="mb-empty" style="display:none">
+    <div class="empty-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="16" height="12" rx="2"/></svg></div>
+    <div class="empty-title">No mailboxes found</div>
+    <div class="empty-sub">Add your first mailbox or adjust filters.</div>
+  </div>
+</div>
+
+<!-- ADD/EDIT MAILBOX MODAL -->
+<div id="mb-modal" style="display:none;position:fixed;inset:0;background:rgba(28,26,23,.5);z-index:1000;align-items:center;justify-content:center;overflow-y:auto">
+  <div style="background:var(--ivory);border-radius:var(--r-xl);padding:32px;width:620px;max-width:90vw;box-shadow:var(--shadow-lg);margin:20px auto">
+    <div style="font-family:var(--font-display);font-size:22px;font-weight:400;margin-bottom:24px" id="mb-modal-title">Add Mailbox</div>
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Full Name *</label><input class="form-control" type="text" id="mb-name" placeholder="John Smith"></div>
+      <div class="form-group"><label class="form-label">Email</label><input class="form-control" type="email" id="mb-email" placeholder="john@gmail.com"></div>
+      <div class="form-group"><label class="form-label">Phone</label><input class="form-control" type="text" id="mb-phone" placeholder="555-123-4567"></div>
+      <div class="form-group"><label class="form-label">Monthly Cost</label><input class="form-control" type="text" id="mb-cost" placeholder="$14.99"></div>
+      <div class="form-group full"><label class="form-label">Full Address *</label><input class="form-control" type="text" id="mb-address" placeholder="123 Main St Suite 100 #456, City, ST 12345"></div>
+      <div class="form-group"><label class="form-label">Status</label><select class="form-control form-select" id="mb-active"><option value="true">Active</option><option value="false">Closed</option></select></div>
+      <div class="form-group full"><label class="form-label">Notes</label><textarea class="form-control" id="mb-notes" placeholder="Any additional notes…"></textarea></div>
+    </div>
+    <div style="margin-top:24px;display:flex;gap:12px">
+      <button class="btn btn-primary" onclick="saveMailbox()">Save Mailbox</button>
+      <button class="btn btn-outline" onclick="closeMbModal()">Cancel</button>
+    </div>
+    <div class="form-msg" id="mb-msg"></div>
+  </div>
+</div>
+
+<!-- MAILBOX SHIPMENTS MODAL -->
+<div id="mb-shipments-modal" style="display:none;position:fixed;inset:0;background:rgba(28,26,23,.5);z-index:1000;align-items:flex-start;justify-content:center;overflow-y:auto;padding:40px 20px">
+  <div style="background:var(--ivory);border-radius:var(--r-xl);padding:32px;width:900px;max-width:95vw;box-shadow:var(--shadow-lg)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div style="font-family:var(--font-display);font-size:24px;font-weight:400" id="mb-shipments-title">Mailbox Shipments</div>
+      <button class="btn btn-outline" onclick="document.getElementById('mb-shipments-modal').style.display='none'">Close</button>
+    </div>
+    <div style="font-size:12px;color:var(--stone-lt);margin-bottom:24px" id="mb-shipments-address"></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Tracking #</th><th>Carrier</th><th>Dir.</th><th>Description</th><th>Status</th><th>Est. Delivery</th><th>Last Update</th><th></th></tr></thead>
+        <tbody id="mb-shipments-tbody"></tbody>
+      </table>
+    </div>
+    <div class="empty-state" id="mb-shipments-empty" style="display:none">
+      <div class="empty-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 6l8-3 8 3v8l-8 3-8-3V6z"/></svg></div>
+      <div class="empty-title">No shipments found</div>
+      <div class="empty-sub">No shipments linked to this mailbox yet.</div>
+    </div>
+  </div>
+</div>
+
+<!-- RECEIPTS -->
+<div class="page-view" id="view-receipts">
+  <div class="section-header">
+    <div><div class="section-title">Receipts</div><div class="section-meta">Anytime Mailbox charges</div></div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-outline" onclick="exportReceiptsCSV()">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 13v4h14v-4M10 3v10M7 10l3 3 3-3"/></svg>
+        Export CSV
+      </button>
+    </div>
+  </div>
+
+  <!-- Summary cards -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px">
+    <div class="stat-card gold">
+      <div class="stat-label">Total Spent</div>
+      <div class="stat-value" id="r-total">--</div>
+      <div class="stat-sub" id="r-period-label">all time</div>
+    </div>
+    <div class="stat-card sage">
+      <div class="stat-label">This Month</div>
+      <div class="stat-value" id="r-month">--</div>
+      <div class="stat-sub" id="r-month-label">current month</div>
+    </div>
+    <div class="stat-card blue">
+      <div class="stat-label">This Year</div>
+      <div class="stat-value" id="r-year">--</div>
+      <div class="stat-sub">year to date</div>
+    </div>
+    <div class="stat-card muted">
+      <div class="stat-label">Total Receipts</div>
+      <div class="stat-value" id="r-count">--</div>
+      <div class="stat-sub">transactions</div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="toolbar">
+    <input class="filter-input" type="text" id="r-search" placeholder="Search receipts, descriptions..." oninput="renderReceipts()">
+    <div class="filter-tabs" id="r-period-tabs">
+      <div class="filter-tab active" onclick="setReceiptPeriod(this,'all')">All Time</div>
+      <div class="filter-tab" onclick="setReceiptPeriod(this,'month')">This Month</div>
+      <div class="filter-tab" onclick="setReceiptPeriod(this,'year')">This Year</div>
+      <div class="filter-tab" onclick="setReceiptPeriod(this,'custom')">Custom</div>
+    </div>
+    <div id="r-custom-dates" style="display:none;display:flex;gap:8px;align-items:center">
+      <input class="form-control" type="date" id="r-date-from" style="padding:8px 12px;font-size:12px" onchange="renderReceipts()">
+      <span style="font-size:12px;color:var(--stone-lt)">to</span>
+      <input class="form-control" type="date" id="r-date-to" style="padding:8px 12px;font-size:12px" onchange="renderReceipts()">
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Receipt #</th>
+          <th>Date</th>
+          <th>Description</th>
+          <th>Payment Method</th>
+          <th>Mailbox ID</th>
+          <th>Amount</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="receipts-tbody"></tbody>
+    </table>
+  </div>
+  <div class="empty-state" id="receipts-empty" style="display:none">
+    <div class="empty-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 2h12a1 1 0 011 1v14a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z"/><path d="M7 6h6M7 10h6M7 14h4"/></svg></div>
+    <div class="empty-title">No receipts found</div>
+    <div class="empty-sub">Receipts will appear once Gmail syncs your Anytime Mailbox charges.</div>
+  </div>
+</div>
+
+<!-- INVENTORY -->
+<div class="page-view" id="view-inventory">
+  <div class="section-header">
+    <div><div class="section-title">Inventory</div><div class="section-meta">Receiving & FBA levels</div></div>
+    <button class="btn btn-primary" onclick="nav('fbashipments')">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 4v12M4 10h12"/></svg>
+      New FBA Shipment
+    </button>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px">
+    <div class="stat-card gold"><div class="stat-label">Total Receiving</div><div class="stat-value" id="inv-total-receiving">--</div><div class="stat-sub">units at warehouse</div></div>
+    <div class="stat-card blue"><div class="stat-label">Total FBA</div><div class="stat-value" id="inv-total-fba">--</div><div class="stat-sub">units at Amazon</div></div>
+    <div class="stat-card sage"><div class="stat-label">Est. Proceeds</div><div class="stat-value" id="inv-total-proceeds">--</div><div class="stat-sub">receiving + FBA</div></div>
+    <div class="stat-card amber"><div class="stat-label">Est. Cost</div><div class="stat-value" id="inv-total-cost">--</div><div class="stat-sub">receiving inventory</div></div>
+  </div>
+  <div class="toolbar" style="margin-bottom:20px">
+    <div class="filter-tabs" id="inv-period-tabs">
+      <div class="filter-tab active" onclick="setInvPeriod(this,'all')">All Time</div>
+      <div class="filter-tab" onclick="setInvPeriod(this,'today')">Today</div>
+      <div class="filter-tab" onclick="setInvPeriod(this,'week')">This Week</div>
+      <div class="filter-tab" onclick="setInvPeriod(this,'month')">This Month</div>
+      <div class="filter-tab" onclick="setInvPeriod(this,'year')">This Year</div>
+      <div class="filter-tab" onclick="setInvPeriod(this,'custom')">Custom</div>
+    </div>
+    <div id="inv-custom-dates" style="display:none;gap:8px;align-items:center">
+      <input class="form-control" type="date" id="inv-date-from" style="padding:8px 12px;font-size:12px" onchange="renderInventory()">
+      <span style="font-size:12px;color:var(--stone-lt)">to</span>
+      <input class="form-control" type="date" id="inv-date-to" style="padding:8px 12px;font-size:12px" onchange="renderInventory()">
+    </div>
+  </div>
+  <div class="dash-grid">
+    <div class="card">
+      <div class="card-header"><div class="card-title">Receiving Inventory</div><div class="card-meta">At your warehouse</div></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Product</th><th>Units</th><th>Est. Cost</th><th>Est. Proceeds</th><th>Margin</th></tr></thead>
+          <tbody id="inv-receiving-tbody"></tbody>
+        </table>
+      </div>
+      <div class="empty-state" id="inv-receiving-empty" style="display:none">
+        <div class="empty-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 7l8-4 8 4v6l-8 4-8-4V7z"/></svg></div>
+        <div class="empty-title">No receiving inventory</div>
+        <div class="empty-sub">Units will appear once Gmail syncs your order confirmations.</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">FBA Inventory</div><div class="card-meta">At Amazon</div></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Product</th><th>Units</th><th>Est. Proceeds</th></tr></thead>
+          <tbody id="inv-fba-tbody"></tbody>
+        </table>
+      </div>
+      <div class="empty-state" id="inv-fba-empty" style="display:none">
+        <div class="empty-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 7h14M3 7l2-4h10l2 4M3 7v9a1 1 0 001 1h12a1 1 0 001-1V7"/></svg></div>
+        <div class="empty-title">No FBA inventory</div>
+        <div class="empty-sub">Create an FBA shipment to move units from receiving.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FBA INVENTORY -->
+<div class="page-view" id="view-fbainventory">
+  <div class="section-header">
+    <div><div class="section-title">FBA Inventory</div><div class="section-meta">Units at Amazon facilities</div></div>
+    <button class="btn btn-secondary" onclick="refreshFBAInventoryPage()">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 10a6 6 0 1 0 1.6-4M4 6v4h4"/></svg>
+      Refresh
+    </button>
+  </div>
+
+  <!-- Summary stats -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px">
+    <div class="stat-card gold">
+      <div class="stat-label">Total SKUs</div>
+      <div class="stat-value" id="fba-inv-total-skus">--</div>
+      <div class="stat-sub">products tracked</div>
+    </div>
+    <div class="stat-card sage">
+      <div class="stat-label">Total Units</div>
+      <div class="stat-value" id="fba-inv-total-units">--</div>
+      <div class="stat-sub">at Amazon</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">In Stock</div>
+      <div class="stat-value" id="fba-inv-in-stock" style="color:#2A6535">--</div>
+      <div class="stat-sub">SKUs with units</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Out of Stock</div>
+      <div class="stat-value" id="fba-inv-out-stock" style="color:#B44B3C">--</div>
+      <div class="stat-sub">SKUs at zero</div>
+    </div>
+  </div>
+
+  <!-- Read-only inventory table -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">FBA Inventory</div>
+      <div class="card-meta" id="fba-inv-updated">--</div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>SKU / Product</th><th>Units Available</th><th>Status</th></tr></thead>
+        <tbody id="fba-inv-tbody"></tbody>
+      </table>
+    </div>
+    <div class="form-msg" id="fba-inv-msg" style="margin-top:16px"></div>
+  </div>
+</div>
+
+<!-- PRODUCT CATALOG -->
+<div class="page-view" id="view-catalog">
+  <div class="section-header">
+    <div><div class="section-title">Product Catalog</div><div class="section-meta">27 products</div></div>
+    <button class="btn btn-primary" onclick="openAddProduct()">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 4v12M4 10h12"/></svg>
+      Add Product
+    </button>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Product Name</th><th>Proceeds</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody id="catalog-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- FBA SHIPMENTS -->
+<div class="page-view" id="view-fbashipments">
+  <div class="section-header">
+    <div><div class="section-title">FBA Shipments</div><div class="section-meta">Units sent to Amazon</div></div>
+    <button class="btn btn-primary" onclick="openNewFBAShipment()">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 4v12M4 10h12"/></svg>
+      New Shipment
+    </button>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Shipment Name</th><th>Date</th><th>Items</th><th>Total Units</th><th>Notes</th><th>Actions</th></tr></thead>
+      <tbody id="fba-shipments-tbody"></tbody>
+    </table>
+  </div>
+  <div class="empty-state" id="fba-shipments-empty" style="display:none">
+    <div class="empty-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 7h14M3 7l2-4h10l2 4M3 7v9a1 1 0 001 1h12a1 1 0 001-1V7"/></svg></div>
+    <div class="empty-title">No FBA shipments yet</div>
+    <div class="empty-sub">Create your first shipment to move inventory to Amazon.</div>
+  </div>
+</div>
+
+<!-- ADD/EDIT PRODUCT MODAL -->
+<div id="product-modal" style="display:none;position:fixed;inset:0;background:rgba(28,26,23,.5);z-index:1000;align-items:center;justify-content:center">
+  <div style="background:var(--ivory);border-radius:var(--r-xl);padding:32px;width:480px;max-width:90vw;box-shadow:var(--shadow-lg)">
+    <div style="font-family:var(--font-display);font-size:22px;font-weight:400;margin-bottom:24px" id="product-modal-title">Add Product</div>
+    <div class="form-grid">
+      <div class="form-group full"><label class="form-label">Product Name *</label><input class="form-control" type="text" id="prod-name" placeholder="e.g. MelaPower 9x Detergent Mountain Fresh"></div>
+      <div class="form-group"><label class="form-label">Proceeds ($)</label><input class="form-control" type="number" step="0.01" id="prod-proceeds" placeholder="0.00"></div>
+      <div class="form-group"><label class="form-label">Status</label><select class="form-control form-select" id="prod-active"><option value="true">Active</option><option value="false">Inactive</option></select></div>
+    </div>
+    <div style="margin-top:24px;display:flex;gap:12px">
+      <button class="btn btn-primary" onclick="saveProduct()">Save Product</button>
+      <button class="btn btn-outline" onclick="document.getElementById('product-modal').style.display='none'">Cancel</button>
+    </div>
+    <div class="form-msg" id="prod-msg"></div>
+  </div>
+</div>
+
+<!-- NEW FBA SHIPMENT MODAL -->
+<div id="fba-modal" style="display:none;position:fixed;inset:0;background:rgba(28,26,23,.5);z-index:1000;align-items:center;justify-content:center;overflow-y:auto;padding:40px 20px">
+  <div style="background:var(--ivory);border-radius:var(--r-xl);padding:32px;width:640px;max-width:95vw;box-shadow:var(--shadow-lg);margin:0 auto">
+    <div style="font-family:var(--font-display);font-size:22px;font-weight:400;margin-bottom:24px">New FBA Shipment</div>
+    <div class="form-grid">
+      <div class="form-group full"><label class="form-label">Shipment Name *</label><input class="form-control" type="text" id="fba-name" placeholder="e.g. FBA Shipment May 2026"></div>
+      <div class="form-group"><label class="form-label">Ship Date</label><input class="form-control" type="date" id="fba-date"></div>
+      <div class="form-group full"><label class="form-label">Notes</label><input class="form-control" type="text" id="fba-notes" placeholder="Optional notes"></div>
+    </div>
+    <div style="margin-top:24px;margin-bottom:16px;font-size:11px;letter-spacing:.10em;text-transform:uppercase;color:var(--stone)">Products</div>
+    <div id="fba-items-list" style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px"></div>
+    <button class="btn btn-outline" onclick="addFBAItem()" style="width:100%;justify-content:center">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 4v12M4 10h12"/></svg>
+      Add Product
+    </button>
+    <div style="margin-top:24px;display:flex;gap:12px">
+      <button class="btn btn-primary" onclick="saveFBAShipment()">Create Shipment</button>
+      <button class="btn btn-outline" onclick="document.getElementById('fba-modal').style.display='none'">Cancel</button>
+    </div>
+    <div class="form-msg" id="fba-msg"></div>
+  </div>
+</div>
+
+<!-- FILTERED SHIPMENTS MODAL -->
+<div id="filtered-modal" style="display:none;position:fixed;inset:0;background:rgba(28,26,23,.5);z-index:1000;align-items:flex-start;justify-content:center;overflow-y:auto;padding:40px 20px">
+  <div style="background:var(--ivory);border-radius:var(--r-xl);padding:32px;width:900px;max-width:95vw;box-shadow:var(--shadow-lg);margin:0 auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div style="font-family:var(--font-display);font-size:24px;font-weight:400" id="filtered-modal-title">Shipments</div>
+      <button class="btn btn-outline" onclick="document.getElementById('filtered-modal').style.display='none'">Close</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Tracking #</th><th>Carrier</th><th>Dir.</th><th>Contact</th><th>Description</th><th>Status</th><th>Est. Delivery</th><th>Last Update</th><th></th></tr></thead>
+        <tbody id="filtered-modal-tbody"></tbody>
+      </table>
+    </div>
+    <div class="empty-state" id="filtered-modal-empty" style="display:none">
+      <div class="empty-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 6l8-3 8 3v8l-8 3-8-3V6z"/></svg></div>
+      <div class="empty-title">No shipments found</div>
+      <div class="empty-sub">Nothing in this category right now.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ALERTS -->
+<div class="page-view" id="view-alerts">
+  <div class="section-header"><div class="section-title">Alerts</div><div class="section-meta" id="alert-count-label">—</div></div>
+  <div class="dash-grid">
+    <div class="card"><div class="card-header"><div class="card-title">Active Alerts</div></div><div id="alert-list"></div></div>
+    <div><div class="card"><div class="card-header"><div class="card-title">Alert Rules</div></div>
+      <div class="settings-row"><div><div class="settings-label">Delivered</div><div class="settings-sub">Notify when status → Delivered</div></div><button class="toggle on" onclick="this.classList.toggle('on')"></button></div>
+      <div class="settings-row"><div><div class="settings-label">Delayed</div><div class="settings-sub">Past expected delivery date</div></div><button class="toggle on" onclick="this.classList.toggle('on')"></button></div>
+      <div class="settings-row"><div><div class="settings-label">Delivery Exception</div><div class="settings-sub">Address issue, failed attempt</div></div><button class="toggle on" onclick="this.classList.toggle('on')"></button></div>
+      <div class="settings-row"><div><div class="settings-label">No movement — 3+ days</div><div class="settings-sub">Carrier stale</div></div><button class="toggle on" onclick="this.classList.toggle('on')"></button></div>
+      <div class="settings-row"><div><div class="settings-label">Out for delivery today</div><div class="settings-sub">Arriving today</div></div><button class="toggle" onclick="this.classList.toggle('on')"></button></div>
+    </div></div>
+  </div>
+</div>
+
+<!-- IMPORT -->
+<div class="page-view" id="view-import">
+  <div class="section-header"><div class="section-title">Import / CSV</div><div class="section-meta">Manual import fallback</div></div>
+  <div class="dash-grid">
+    <div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Gmail CSV — Inbound</div></div>
+        <div class="import-zone" onclick="document.getElementById('gmail-file-input').click()" ondragover="event.preventDefault();this.style.borderColor='var(--gold)'" ondragleave="this.style.borderColor=''" ondrop="event.preventDefault();this.style.borderColor='';handleGmailCSV(event.dataTransfer.files[0])">
+          <div class="import-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4h14a1 1 0 011 1v10a1 1 0 01-1 1H3a1 1 0 01-1-1V5a1 1 0 011-1z"/><path d="M2 4l8 7 8-7"/></svg></div>
+          <div class="import-label">Upload ShipTrack Gmail CSV</div>
+          <div class="import-hint">ShipTrack — Tracking Confirmations.csv</div>
+        </div>
+        <input type="file" id="gmail-file-input" accept=".csv" style="display:none" onchange="handleGmailCSV(this.files[0])">
+        <div id="gmail-result" style="margin-top:14px"></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Pirate Ship CSV — Outbound</div></div>
+        <div class="import-zone" onclick="document.getElementById('ps-file-input').click()" ondragover="event.preventDefault();this.style.borderColor='var(--gold)'" ondragleave="this.style.borderColor=''" ondrop="event.preventDefault();this.style.borderColor='';handlePirateShipCSV(event.dataTransfer.files[0])">
+          <div class="import-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 13v4h14v-4M10 3v10M7 10l3 3 3-3"/></svg></div>
+          <div class="import-label">Upload Pirate Ship CSV</div>
+          <div class="import-hint">Recipient · Tracking · Carrier · Ship date · Cost</div>
+        </div>
+        <input type="file" id="ps-file-input" accept=".csv" style="display:none" onchange="handlePirateShipCSV(this.files[0])">
+        <div id="csv-result" style="margin-top:14px"></div>
+      </div>
+    </div>
+    <div><div class="card"><div class="card-header"><div class="card-title">Carrier Tracking APIs</div></div>
+      <div class="integration-row"><div class="integration-icon" style="background:#F0E8D0;font-size:20px">📦</div><div><div class="integration-name">AfterShip</div><div class="integration-desc">UPS, USPS, FedEx via one API</div></div><div style="margin-left:auto"><span id="aftership-status" class="pill-missing">Not configured</span></div></div>
+      <div class="integration-row"><div class="integration-icon" style="background:#FDF4E8;font-size:20px">🟤</div><div><div class="integration-name">UPS Track API v3</div><div class="integration-desc">developer.ups.com</div></div><div style="margin-left:auto"><span class="pill-missing">Optional</span></div></div>
+      <div class="integration-row"><div class="integration-icon" style="background:#EAF0F8;font-size:20px">🔵</div><div><div class="integration-name">USPS OAuth2 API</div><div class="integration-desc">developer.usps.com</div></div><div style="margin-left:auto"><span class="pill-missing">Optional</span></div></div>
+      <div class="integration-row"><div class="integration-icon" style="background:#EEE8F6;font-size:20px">🟣</div><div><div class="integration-name">FedEx Track API</div><div class="integration-desc">developer.fedex.com</div></div><div style="margin-left:auto"><span class="pill-missing">Optional</span></div></div>
+    </div></div>
+  </div>
+</div>
+
+<!-- INTEGRATIONS -->
+<div class="page-view" id="view-integrations">
+  <div class="section-header"><div class="section-title">Integrations</div><div class="section-meta">Gmail sync &amp; API connections</div></div>
+  <div class="dash-grid">
+    <div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Gmail Auto-Sync</div><span id="gmail-sync-status-badge" class="pill-pending">Configuring</span></div>
+        <div class="sync-stat-grid">
+          <div class="sync-stat"><div class="sync-stat-value" id="sync-total">—</div><div class="sync-stat-label">Shipments imported</div></div>
+          <div class="sync-stat"><div class="sync-stat-value" id="sync-last-count">—</div><div class="sync-stat-label">Last sync added</div></div>
+          <div class="sync-stat"><div class="sync-stat-value" id="sync-errors">—</div><div class="sync-stat-label">Errors</div></div>
+        </div>
+        <div class="settings-row"><div><div class="settings-label">Gmail sync enabled</div><div class="settings-sub">Apps Script posts every 5 min</div></div><button class="toggle on" onclick="this.classList.toggle('on')"></button></div>
+        <div class="settings-row"><div><div class="settings-label">Labels monitored</div><div class="settings-sub" style="margin-top:4px"><span class="tag-pill">Melalueca/Tracking Confirmations</span><span class="tag-pill">Pirate ship/Tracking</span></div></div></div>
+        <div class="settings-row"><div><div class="settings-label">Last sync time</div><div class="settings-sub" id="last-sync-time">Not synced yet</div></div><button class="btn btn-outline" onclick="runSyncNow()" style="font-size:12px;flex-shrink:0">Run sync now</button></div>
+        <div class="settings-row"><div><div class="settings-label">Last sync result</div><div class="settings-sub" id="last-sync-result">—</div></div></div>
+        <div class="settings-row"><div><div class="settings-label">Dashboard API endpoint</div><div class="settings-sub"><code id="api-endpoint-display" style="font-size:11px;background:var(--ivory-2);padding:2px 6px;border-radius:4px">Not configured</code></div></div></div>
+      </div>
+      <div class="card"><div class="card-header"><div class="card-title">Sync History</div></div><div id="sync-history"><div style="font-size:13px;color:var(--stone-lt);padding:12px 0">No sync history yet.</div></div></div>
+    </div>
+    <div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Tracking API</div></div>
+        <div class="api-config-row"><div class="api-status-dot" id="api-dot-aftership"></div><div style="flex:1"><div class="settings-label">AfterShip API Key</div><div class="settings-sub" id="api-aftership-status">Not configured</div></div></div>
+        <div style="margin-top:14px">
+          <label class="form-label" style="display:block;margin-bottom:7px">API Key</label>
+          <input class="form-control" type="password" id="aftership-key-input" placeholder="asat_xxxxxxxxxxxxxxxx">
+          <div style="margin-top:10px;display:flex;gap:8px">
+            <button class="btn btn-primary" onclick="saveAftershipKey()" style="font-size:12px">Save key</button>
+            <button class="btn btn-outline" onclick="testAftershipKey()" style="font-size:12px">Test</button>
+          </div>
+          <div id="aftership-test-result" style="margin-top:10px;font-size:12px"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Refresh Schedule</div></div>
+        <div style="font-size:12px;color:var(--stone);line-height:2">
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:.5px solid var(--cream-bd)"><span>Label Created</span><span style="color:var(--stone-lt)">Every 2 hours</span></div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:.5px solid var(--cream-bd)"><span>In Transit</span><span style="color:var(--stone-lt)">Every 1 hour</span></div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:.5px solid var(--cream-bd)"><span>Out for Delivery</span><span style="color:var(--stone-lt)">Every 10 minutes</span></div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:.5px solid var(--cream-bd)"><span>Delayed / Exception</span><span style="color:var(--stone-lt)">Every 30 minutes</span></div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0"><span>Delivered</span><span style="color:#6AAF75">No refresh</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div class="page-view" id="view-settings">
+  <div class="section-header"><div class="section-title">Settings</div><div class="section-meta">Preferences</div></div>
+  <div style="max-width:640px">
+    <div class="card">
+      <div class="card-header"><div class="card-title">Dashboard API</div></div>
+      <div class="settings-row"><div><div class="settings-label">API Endpoint URL</div><div class="settings-sub">Your deployed Next.js URL</div></div></div>
+      <input class="form-control" type="text" id="api-url-input" placeholder="https://your-app.vercel.app/api/shipments/sync" style="margin-top:8px">
+      <div style="margin-top:10px"><button class="btn btn-primary" onclick="saveApiUrl()" style="font-size:12px">Save URL</button></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">General</div></div>
+      <div class="settings-row"><div><div class="settings-label">Stale threshold (days)</div><div class="settings-sub">Days without carrier movement before flagging</div></div><input class="form-control" type="number" value="3" style="width:72px;text-align:center;padding:7px 10px" id="stale-days"></div>
+      <div class="settings-row"><div><div class="settings-label">Auto-refresh tracking</div><div class="settings-sub">Smart intervals per status</div></div><button class="toggle on" onclick="this.classList.toggle('on')"></button></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Data</div></div>
+      <div class="settings-row"><div><div class="settings-label">Export all shipments</div><div class="settings-sub">Download CSV</div></div><button class="btn btn-outline" onclick="exportCSV()" style="font-size:12px">Export CSV</button></div>
+      <div class="settings-row"><div><div class="settings-label">Reset to demo data</div><div class="settings-sub">Reload sample shipments</div></div><button class="btn btn-outline" onclick="clearData()" style="font-size:12px;color:var(--stone)">Reset</button></div>
+    </div>
+  </div>
+</div>
+
+</div></div></div>
+<!-- EDIT MODAL -->
+<div id="edit-modal" style="display:none;position:fixed;inset:0;background:rgba(28,26,23,.5);z-index:1000;align-items:center;justify-content:center">
+  <div style="background:var(--ivory);border-radius:var(--r-xl);padding:32px;width:560px;max-width:90vw;box-shadow:var(--shadow-lg)">
+    <div style="font-family:var(--font-display);font-size:22px;font-weight:400;margin-bottom:24px">Edit Shipment</div>
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Tracking Number</label><input class="form-control" type="text" id="edit-tracking" readonly style="opacity:.6"></div>
+      <div class="form-group"><label class="form-label">Carrier</label><select class="form-control form-select" id="edit-carrier"><option>UPS</option><option>USPS</option><option>FedEx</option><option>DHL</option><option>Other</option></select></div>
+      <div class="form-group"><label class="form-label">Direction</label><select class="form-control form-select" id="edit-direction"><option value="inbound">Inbound — Arriving to me</option><option value="outbound">Outbound — Sent by me</option></select></div>
+      <div class="form-group"><label class="form-label">Status</label><select class="form-control form-select" id="edit-status"><option>Unknown</option><option>Label Created</option><option>In Transit</option><option>Out for Delivery</option><option>Delivered</option><option>Delayed</option><option>Delivery Exception</option><option>Returned</option><option>Lost</option></select></div>
+      <div class="form-group"><label class="form-label">Contact / Customer</label><input class="form-control" type="text" id="edit-contact"></div>
+      <div class="form-group"><label class="form-label">Expected Delivery</label><input class="form-control" type="date" id="edit-date"></div>
+      <div class="form-group full"><label class="form-label">Description</label><input class="form-control" type="text" id="edit-desc"></div>
+      <div class="form-group"><label class="form-label">Order Number</label><input class="form-control" type="text" id="edit-order"></div>
+      <div class="form-group"><label class="form-label">Cost</label><input class="form-control" type="text" id="edit-cost"></div>
+      <div class="form-group full"><label class="form-label">Notes</label><textarea class="form-control" id="edit-notes"></textarea></div>
+    </div>
+    <div style="margin-top:24px;display:flex;gap:12px">
+      <button class="btn btn-primary" onclick="saveEdit()">Save Changes</button>
+      <button class="btn btn-outline" onclick="closeEdit()">Cancel</button>
+    </div>
+    <div class="form-msg" id="edit-msg"></div>
+  </div>
+</div>
+
+<div class="toast-wrap" id="toasts"></div>
+
+<script>
+const SUPABASE_URL='https://qteuyoavbvamobelkaus.supabase.co';
+const SUPABASE_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0ZXV5b2F2YnZhbW9iZWxrYXVzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgxMDI2MzYsImV4cCI6MjA5MzY3ODYzNn0.oe4bceb68FEGHNR3lll838pKG6aqRL7duBR-SkvsUCM';
+const SETTINGS_KEY='shiptrack_settings_v3';
+const SYNC_LOG_KEY='shiptrack_synclog_v3';
+const STALE_DAYS=3;
+let shipments=[],dirFilter='',settings={},syncLogs=[];
+const today=new Date().toISOString().split('T')[0];
+const DELIVERED=['Delivered','Returned'];
+const PROBLEMS=['Delivery Exception','Failed Attempt','Delayed'];
+
+function loadSettings(){try{settings=JSON.parse(localStorage.getItem(SETTINGS_KEY))||{};}catch(e){settings={};}try{syncLogs=JSON.parse(localStorage.getItem(SYNC_LOG_KEY))||[];}catch(e){syncLogs=[];}}
+function saveSettings(){try{localStorage.setItem(SETTINGS_KEY,JSON.stringify(settings));}catch(e){}}
+
+function isStale(s){if(DELIVERED.includes(s.status))return false;if(s.is_stale)return true;const staleDays=parseInt(document.getElementById('stale-days')?.value||'3')||3;const last=s.lastCarrierUpdate||s.lastChecked;if(!last)return false;return(Date.now()-new Date(last).getTime())>staleDays*86400000&&['Label Created','In Transit','Unknown'].includes(s.status);}
+function isDelayed(s){if(!s.estDelivery||DELIVERED.includes(s.status))return false;return new Date(s.estDelivery)<new Date(new Date().toDateString());}
+function isProblem(s){return PROBLEMS.includes(s.status)||isDelayed(s)||isStale(s);}
+function getTrackingUrl(s){if(s.tracking_url)return s.tracking_url;const m={'UPS':`https://www.ups.com/track?tracknum=${s.tracking}`,'USPS':`https://tools.usps.com/go/TrackConfirmAction?tLabels=${s.tracking}`,'FedEx':`https://www.fedex.com/fedextrack/?trknbr=${s.tracking}`};return m[s.carrier]||'';}
+
+function statusBadge(st){const m={'In Transit':['badge-transit','In Transit'],'Out for Delivery':['badge-ofd','Out for Delivery'],'Delivered':['badge-delivered','Delivered'],'Delayed':['badge-delayed','Delayed'],'Delivery Exception':['badge-exception','Exception'],'Failed Attempt':['badge-failed','Failed Attempt'],'Label Created':['badge-created','Label Created'],'Returned':['badge-returned','Returned'],'Lost':['badge-lost','Lost'],'Unknown':['badge-unknown','Not Connected']};const[cls,lbl]=m[st]||['badge-unknown',st||'Unknown'];return`<span class="badge ${cls}">${lbl}</span>`;}
+function staleTag(s){if(!isStale(s))return'';return`<span class="stale-warn"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="8"/><path d="M10 6v4l3 3"/></svg>Stale</span>`;}
+function carrierBadge(c){const cls={UPS:'carrier-ups',USPS:'carrier-usps',FedEx:'carrier-fedex',DHL:'carrier-dhl'}[c]||'carrier-other';return`<span class="carrier-badge ${cls}">${c}</span>`;}
+function dirBadge(d){if(d==='inbound')return`<span class="dir-badge dir-in"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 17V7M6 11l4 4 4-4"/></svg>In</span>`;return`<span class="dir-badge dir-out"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 3v10M6 9l4-4 4 4"/></svg>Out</span>`;}
+function trackBtn(s){const url=getTrackingUrl(s);if(!url)return'';return`<a href="${url}" target="_blank" rel="noopener" class="btn-track"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 3H4a1 1 0 00-1 1v12a1 1 0 001 1h12a1 1 0 001-1v-6"/><path d="M15 3h2v2M11 9l6-6"/></svg>Track</a>`;}
+function refreshBtn(id){return`<button class="btn-refresh-row" onclick="refreshOne('${id}')" title="Refresh"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 10a6 6 0 0110.9-3.4"/><path d="M16 10a6 6 0 01-10.9 3.4"/><path d="M16 6.5V10h-3.5"/><path d="M4 13.5V10h3.5"/></svg></button>`;}
+function fmtDate(d){if(!d)return'—';try{return new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric'});}catch(e){return d;}}
+function fmtRelative(d){if(!d)return'—';try{const diff=Date.now()-new Date(d).getTime();const mins=Math.floor(diff/60000);if(mins<1)return'just now';if(mins<60)return`${mins}m ago`;const hrs=Math.floor(mins/60);if(hrs<24)return`${hrs}h ago`;return`${Math.floor(hrs/24)}d ago`;}catch(e){return d;}}
+
+function mainRow(s){const cd=s.customer_name||s.contact||s.vendor_name||'—';const sub=s.vendor_name&&s.customer_name!==s.vendor_name?`<div class="td-sub">${s.vendor_name}</div>`:s.order_number?`<div class="td-sub">#${s.order_number}</div>`:'';const bg=isStale(s)?'background:rgba(154,122,175,.04)':isProblem(s)?'background:rgba(196,146,74,.03)':'';return`<tr style="${bg}"><td class="td-tracking">${s.tracking.slice(0,20)}${s.tracking.length>20?'…':''}</td><td>${carrierBadge(s.carrier)}</td><td>${dirBadge(s.direction)}</td><td><div class="td-name">${cd}</div>${sub}</td><td style="font-size:13px;color:var(--stone);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.description||'—'}</td><td>${statusBadge(s.status)}${staleTag(s)}</td><td class="td-muted">${fmtDate(s.estDelivery)}</td><td class="td-muted">${fmtRelative(s.lastCarrierUpdate||s.lastChecked)}</td><td><div class="td-actions">${trackBtn(s)}${refreshBtn(s.id)}<button style="background:none;border:none;cursor:pointer;color:var(--stone-lt);padding:4px 8px;border-radius:6px;font-size:13px;line-height:1;flex-shrink:0" onclick="event.stopPropagation();editRow('${s.id}')" title="Edit">✎</button><button style="background:none;border:none;cursor:pointer;color:var(--stone-lt);padding:4px 8px;border-radius:6px;font-size:12px;flex-shrink:0" onclick="event.stopPropagation();deleteRow('${s.id}')" title="Remove">✕</button></div></td></tr>`;}
+function inboundRow(s){const bg=isStale(s)||isProblem(s)?'background:rgba(196,146,74,.03)':'';return`<tr style="${bg}"><td class="td-tracking">${s.tracking.slice(0,20)}${s.tracking.length>20?'…':''}</td><td>${carrierBadge(s.carrier)}</td><td><div class="td-name">${s.vendor_name||s.contact||'—'}</div>${s.order_number?`<div class="td-sub">#${s.order_number}</div>`:''}</td><td style="font-size:13px;color:var(--stone);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.description||'—'}</td><td>${statusBadge(s.status)}${staleTag(s)}</td><td class="td-muted">${fmtDate(s.estDelivery)}</td><td class="td-muted">${fmtRelative(s.lastCarrierUpdate||s.lastChecked)}</td><td><div class="td-actions">${trackBtn(s)}${refreshBtn(s.id)}</div></td></tr>`;}
+function outboundRow(s){return`<tr><td class="td-tracking">${s.tracking.slice(0,20)}${s.tracking.length>20?'…':''}</td><td>${carrierBadge(s.carrier)}</td><td><div class="td-name">${s.customer_name||s.contact||'—'}</div></td><td style="font-size:13px;color:var(--stone);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.description||'—'}</td><td>${statusBadge(s.status)}${staleTag(s)}</td><td class="td-muted">${fmtDate(s.estDelivery)}</td><td class="td-muted">${s.cost||'—'}</td><td><div class="td-actions">${trackBtn(s)}${refreshBtn(s.id)}</div></td></tr>`;}
+
+function renderMainTable(){const q=(document.getElementById('filter-search')?.value||'').toLowerCase();const ca=document.getElementById('filter-carrier')?.value||'';const st=document.getElementById('filter-status')?.value||'';const data=shipments.filter(s=>{if(q&&!([s.tracking,s.contact,s.customer_name,s.vendor_name,s.description,s.notes,s.order_number].join(' ').toLowerCase().includes(q)))return false;if(ca&&s.carrier!==ca)return false;if(st&&s.status!==st)return false;if(dirFilter&&s.direction!==dirFilter)return false;return true;});document.getElementById('noResults').style.display=data.length?'none':'block';document.getElementById('main-tbody').innerHTML=data.map(mainRow).join('');}
+function renderDirTable(dir){const inbound=dir==='in';const direction=inbound?'inbound':'outbound';const q=(document.getElementById(`${dir}-search`)?.value||'').toLowerCase();const st=document.getElementById(`${dir}-status`)?.value||'';const data=shipments.filter(s=>{if(s.direction!==direction)return false;if(q&&!([s.tracking,s.contact,s.customer_name,s.vendor_name,s.description].join(' ').toLowerCase().includes(q)))return false;if(st&&s.status!==st)return false;return true;});const tbody=document.getElementById(`${dir}-tbody`);const empty=document.getElementById(`${dir}-empty`);empty.style.display=data.length?'none':'block';tbody.innerHTML=inbound?data.map(inboundRow).join(''):data.map(outboundRow).join('');}
+
+function showFilteredShipments(filter){
+  const todayStr=new Date().toDateString();
+  const titles={'active':'Active Shipments','delivered-today':'Delivered Today','ofd':'Out for Delivery','delayed':'Delayed Shipments','exceptions':'Exceptions','stale':'Stale Shipments'};
+  document.getElementById('filtered-modal-title').textContent=titles[filter]||'Shipments';
+  let data=[];
+  if(filter==='active')data=shipments.filter(s=>!DELIVERED.includes(s.status));
+  if(filter==='delivered-today')data=shipments.filter(s=>s.status==='Delivered'&&new Date(s.lastCarrierUpdate||s.lastChecked||'').toDateString()===todayStr);
+  if(filter==='ofd')data=shipments.filter(s=>s.status==='Out for Delivery');
+  if(filter==='delayed')data=shipments.filter(s=>isDelayed(s));
+  if(filter==='exceptions')data=shipments.filter(s=>PROBLEMS.includes(s.status));
+  if(filter==='stale')data=shipments.filter(s=>isStale(s));
+  const tbody=document.getElementById('filtered-modal-tbody');
+  const empty=document.getElementById('filtered-modal-empty');
+  empty.style.display=data.length?'none':'block';
+  tbody.innerHTML=data.map(s=>`<tr>
+    <td class="td-tracking">${s.tracking.slice(0,20)}${s.tracking.length>20?'...':''}</td>
+    <td>${carrierBadge(s.carrier)}</td>
+    <td>${dirBadge(s.direction)}</td>
+    <td><div class="td-name">${s.customer_name||s.contact||s.vendor_name||'--'}</div></td>
+    <td style="font-size:13px;color:var(--stone);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.description||'--'}</td>
+    <td>${statusBadge(s.status)}${staleTag(s)}</td>
+    <td class="td-muted">${fmtDate(s.estDelivery)}</td>
+    <td class="td-muted">${fmtRelative(s.lastCarrierUpdate||s.lastChecked)}</td>
+    <td>${trackBtn(s)}</td>
+  </tr>`).join('');
+  document.getElementById('filtered-modal').style.display='flex';
+}
+
+function renderDashboard(){
+  const todayStr=new Date().toDateString();
+  document.getElementById('s-active').textContent=shipments.filter(s=>!DELIVERED.includes(s.status)).length;
+  document.getElementById('s-delivered').textContent=shipments.filter(s=>s.status==='Delivered'&&new Date(s.lastCarrierUpdate||s.lastChecked||'').toDateString()===todayStr).length;
+  document.getElementById('s-ofd').textContent=shipments.filter(s=>s.status==='Out for Delivery').length;
+  document.getElementById('s-delayed').textContent=shipments.filter(s=>isDelayed(s)).length;
+  document.getElementById('s-exc').textContent=shipments.filter(s=>PROBLEMS.includes(s.status)).length;
+  document.getElementById('s-stale').textContent=shipments.filter(s=>isStale(s)).length;
+  document.getElementById('dash-date').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}).toUpperCase();
+  document.getElementById('nav-all-count').textContent=shipments.length;
+  document.getElementById('nav-in-count').textContent=shipments.filter(s=>s.direction==='inbound').length;
+  document.getElementById('nav-out-count').textContent=shipments.filter(s=>s.direction==='outbound').length;
+  const alertCount=shipments.filter(s=>isProblem(s)||s.status==='Unknown').length;
+  document.getElementById('nav-alert-count').textContent=alertCount;
+  document.getElementById('notif-dot').style.display=alertCount>0?'block':'none';
+  document.getElementById('dash-tbody').innerHTML=shipments.slice(0,6).map(s=>`<tr><td class="td-tracking">${s.tracking.slice(0,18)}${s.tracking.length>18?'…':''}</td><td>${carrierBadge(s.carrier)}</td><td style="font-size:13px">${s.customer_name||s.vendor_name||s.contact||'—'}</td><td>${statusBadge(s.status)}${staleTag(s)}</td><td class="td-muted">${fmtDate(s.estDelivery)}</td><td class="td-muted">${fmtRelative(s.lastCarrierUpdate||s.lastChecked)}</td><td>${trackBtn(s)}</td></tr>`).join('');
+  const alerts=buildAlerts().slice(0,5);
+  document.getElementById('dash-alerts').innerHTML=alerts.length?alerts.map(a=>`<div class="alert-item"><div class="alert-dot ${a.color}"></div><div><div class="alert-title">${a.title}</div><div class="alert-sub">${a.sub}</div></div></div>`).join(''):'<p style="font-size:13px;color:var(--stone-lt);padding:8px 0">No active alerts.</p>';
+  const carriers={};shipments.forEach(s=>{carriers[s.carrier]=(carriers[s.carrier]||0)+1;});
+  const total=shipments.length||1;
+  document.getElementById('carrier-breakdown').innerHTML=Object.entries(carriers).map(([c,n])=>`<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">${carrierBadge(c)}<span style="font-family:'Courier New',monospace;font-size:12px;color:var(--stone)">${n}</span></div><div style="height:3px;background:var(--ivory-3);border-radius:2px;overflow:hidden"><div style="width:${Math.round(n/total*100)}%;height:100%;background:var(--gold-light);border-radius:2px"></div></div></div>`).join('');
+  updateSyncUI();
+}
+
+function buildAlerts(){const a=[];shipments.forEach(s=>{if(s.status==='Delivery Exception')a.push({color:'red',title:`Exception — ${s.description||s.tracking}`,sub:`${s.carrier} · ${s.exception_reason||s.contact||''}`});if(s.status==='Failed Attempt')a.push({color:'amber',title:`Failed delivery — ${s.description||s.tracking}`,sub:`${s.carrier} · ${s.contact||''}`});if(isDelayed(s))a.push({color:'amber',title:`Delayed — ${s.description||s.tracking}`,sub:`Expected ${s.estDelivery} · ${s.carrier}`});if(isStale(s))a.push({color:'purple',title:`No movement (${STALE_DAYS}+ days) — ${s.tracking}`,sub:`${s.carrier} · Last update: ${fmtRelative(s.lastCarrierUpdate)}`});if(s.status==='Out for Delivery')a.push({color:'blue',title:`Out for delivery — ${s.description||s.tracking}`,sub:`${s.carrier} · ${s.contact||''}`});if(s.status==='Unknown')a.push({color:'purple',title:`Tracking not connected — ${s.tracking}`,sub:`${s.carrier} · Add AfterShip API key in Integrations`});if(s.status==='Delivered'&&new Date(s.lastCarrierUpdate||'').toDateString()===new Date().toDateString())a.push({color:'green',title:`Delivered — ${s.description||s.tracking}`,sub:`${s.carrier} · ${s.contact||''}`});});return a;}
+function renderAlerts(){const alerts=buildAlerts();document.getElementById('alert-count-label').textContent=`${alerts.length} ACTIVE`;document.getElementById('alert-list').innerHTML=alerts.length?alerts.map(a=>`<div class="alert-item"><div class="alert-dot ${a.color}"></div><div style="flex:1"><div class="alert-title">${a.title}</div><div class="alert-sub">${a.sub}</div></div></div>`).join(''):'<div class="empty-state"><div class="empty-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 10l4 4 8-8"/></svg></div><div class="empty-title">All clear</div><div class="empty-sub">No alerts at this time.</div></div>';}
+
+function updateSyncUI(){const lastLog=syncLogs[0];if(lastLog){document.getElementById('sync-dot').className='sync-dot '+(lastLog.success?'active':'error');document.getElementById('sync-label').textContent='Synced '+fmtRelative(lastLog.syncedAt);document.getElementById('last-sync-time').textContent=new Date(lastLog.syncedAt).toLocaleString();document.getElementById('last-sync-result').textContent=lastLog.success?`✓ ${lastLog.added} added, ${lastLog.updated} updated`:`✗ Error: ${lastLog.errorDetail||'Unknown'}`;document.getElementById('sync-total').textContent=shipments.filter(s=>s.source==='gmail').length;document.getElementById('sync-last-count').textContent=lastLog.added||0;document.getElementById('sync-errors').textContent=lastLog.errors||0;document.getElementById('gmail-sync-status-badge').className=lastLog.success?'pill-connected':'pill-pending';document.getElementById('gmail-sync-status-badge').textContent=lastLog.success?'Connected':'Error';}const apiUrl=settings.apiUrl||'';if(apiUrl)document.getElementById('api-endpoint-display').textContent=apiUrl;if(syncLogs.length){document.getElementById('sync-history').innerHTML=syncLogs.slice(0,8).map(l=>`<div class="sync-history-row"><span class="${l.success?'sync-ok':'sync-err'}">${l.success?'✓':'✗'}</span><span style="flex:1">${new Date(l.syncedAt).toLocaleString()}</span><span style="color:var(--stone-lt)">${l.added||0} added · ${l.updated||0} updated</span></div>`).join('');}}
+
+function refreshAllActive(){const btn=document.getElementById('refresh-btn');const svg=btn?.querySelector('svg');if(svg)svg.classList.add('spinning');setTimeout(()=>{if(svg)svg.classList.remove('spinning');},800);toast('Tracking refresh triggered.','default');}
+function refreshOne(id){toast('Refresh triggered — status will update shortly.','default');}
+
+async function addManual(){
+  const tracking=document.getElementById('f-tracking').value.trim().toUpperCase();
+  const carrier=document.getElementById('f-carrier').value;
+  const msg=document.getElementById('add-msg');
+  const showMsg=(text,type)=>{msg.textContent=text;msg.className=`form-msg ${type}`;msg.style.display='block';setTimeout(()=>msg.style.display='none',4000);};
+  if(!tracking)return showMsg('Tracking number is required.','error');
+  if(!carrier)return showMsg('Please select a carrier.','error');
+  const urlMap={'UPS':`https://www.ups.com/track?tracknum=${tracking}`,'USPS':`https://tools.usps.com/go/TrackConfirmAction?tLabels=${tracking}`,'FedEx':`https://www.fedex.com/fedextrack/?trknbr=${tracking}`};
+  const record={tracking_number:tracking,carrier,shipment_direction:document.getElementById('f-direction').value,contact:document.getElementById('f-contact').value.trim(),customer_name:document.getElementById('f-contact').value.trim(),vendor_name:'',order_number:document.getElementById('f-order').value.trim(),description:document.getElementById('f-desc').value.trim(),current_status:document.getElementById('f-status').value,status_category:document.getElementById('f-status').value,estimated_delivery_date:document.getElementById('f-date').value||null,notes:document.getElementById('f-notes').value.trim(),cost:document.getElementById('f-cost').value.trim(),sync_source:'manual',tracking_url:urlMap[carrier]||'',next_refresh_at:new Date().toISOString(),is_stale:false,added_at:new Date().toISOString().split('T')[0],updated_at:new Date().toISOString()};
+  try{const res=await fetch(`${SUPABASE_URL}/rest/v1/shipments`,{method:'POST',headers:{'apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(record)});if(res.status===409)return showMsg('This tracking number already exists.','warn');if(!res.ok){const err=await res.text();return showMsg('Save failed: '+err.slice(0,100),'error');}showMsg('Shipment saved to database.','success');clearForm();setTimeout(async()=>{await loadFromSupabase();nav('all');},1000);}catch(e){showMsg('Network error: '+e.message,'error');}
+}
+
+function clearForm(){['f-tracking','f-contact','f-desc','f-order','f-tags','f-notes','f-cost','f-date'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('f-carrier').value='';document.getElementById('f-direction').value='inbound';document.getElementById('f-status').value='Unknown';}
+
+async function bulkAdd(){
+  const raw=document.getElementById('bulk-tracking').value.trim();
+  if(!raw)return;
+  const lines=raw.split('\n').map(l=>l.trim().toUpperCase()).filter(Boolean);
+  if(!lines.length)return;
+  const direction=document.getElementById('bulk-direction').value;
+  const contact=document.getElementById('bulk-contact').value.trim();
+  const desc=document.getElementById('bulk-desc').value.trim()||(direction==='outbound'?'Forward Task':'');
+  const progress=document.getElementById('bulk-progress');
+  const result=document.getElementById('bulk-result');
+  let added=0,skipped=0,failed=0;
+  progress.textContent=`Processing 0 of ${lines.length}...`;
+  for(let i=0;i<lines.length;i++){
+    const tracking=lines[i];
+    progress.textContent=`Processing ${i+1} of ${lines.length}...`;
+    let carrier='UPS';
+    if(/^1Z[0-9A-Z]{16}$/.test(tracking))carrier='UPS';
+    else if(/^9[2-5]\d{18,20}/.test(tracking)||/^9400/.test(tracking))carrier='USPS';
+    else if(/^\d{12}$/.test(tracking)||/^\d{15}$/.test(tracking)||/^\d{20}$/.test(tracking)||/^7489/.test(tracking))carrier='FedEx';
+    const urlMap={'UPS':`https://www.ups.com/track?tracknum=${tracking}`,'USPS':`https://tools.usps.com/go/TrackConfirmAction?tLabels=${tracking}`,'FedEx':`https://www.fedex.com/fedextrack/?trknbr=${tracking}`};
+    const record={tracking_number:tracking,carrier,shipment_direction:direction,contact,customer_name:contact,vendor_name:'',description:desc,current_status:'Unknown',status_category:'Unknown',sync_source:'manual',tracking_url:urlMap[carrier]||'',next_refresh_at:new Date().toISOString(),is_stale:false,added_at:new Date().toISOString().split('T')[0],updated_at:new Date().toISOString()};
+    try{const res=await fetch(`${SUPABASE_URL}/rest/v1/shipments`,{method:'POST',headers:{'apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(record)});if(res.status===409){skipped++;continue;}if(!res.ok){failed++;continue;}added++;}catch(e){failed++;}
+  }
+  progress.textContent='';
+  result.innerHTML=resultBox(failed>0?'warn':'success',`<strong>${added}</strong> shipment${added!==1?'s':''} added · <strong>${skipped}</strong> duplicate${skipped!==1?'s':''} skipped${failed?` · <strong>${failed}</strong> failed`:''}`);
+  if(added>0){await loadFromSupabase();toast(`${added} shipments added successfully.`,'success');}
+}
+
+async function deleteRow(id){try{const res=await fetch(`${SUPABASE_URL}/rest/v1/shipments?id=eq.${id}`,{method:'DELETE',headers:{'apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`}});if(!res.ok){const err=await res.text();toast('Delete failed: '+err.slice(0,80),'default');return;}shipments=shipments.filter(s=>s.id!==id);renderAll();toast('Shipment removed.','default');}catch(e){toast('Network error: '+e.message,'default');}}
+
+function parseCSV(text){const lines=text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n');function parseLine(line){const fields=[];let cur='',inQ=false;for(let i=0;i<line.length;i++){const c=line[i];if(c==='"'&&!inQ){inQ=true;continue}if(c==='"'&&inQ){if(line[i+1]==='"'){cur+='"';i++;}else inQ=false;continue}if(c===','&&!inQ){fields.push(cur.trim());cur='';continue}cur+=c;}fields.push(cur.trim());return fields;}const headers=parseLine(lines[0]).map(h=>h.toLowerCase().trim());return lines.slice(1).filter(l=>l.trim()).map(l=>{const vals=parseLine(l);const row={};headers.forEach((h,i)=>row[h]=vals[i]||'');return row;});}
+function normalizeCarrier(raw){const c=(raw||'').toUpperCase();if(c.includes('UPS'))return'UPS';if(c.includes('USPS')||c.includes('FIRST CLASS')||c.includes('PRIORITY')||c.includes('GROUND ADVANTAGE'))return'USPS';if(c.includes('FEDEX')||c.includes('FED EX'))return'FedEx';return raw||'Other';}
+function normalizeStatus(raw){const s=(raw||'').toLowerCase();if(s.includes('delivered'))return'Delivered';if(s.includes('out for'))return'Out for Delivery';if(s.includes('transit'))return'In Transit';if(s.includes('delay'))return'Delayed';if(s.includes('exception'))return'Delivery Exception';if(s.includes('fail')||s.includes('attempt'))return'Failed Attempt';if(s.includes('label')||s.includes('created')||s.includes('pre-shipment'))return'Label Created';if(s.includes('return'))return'Returned';return'Unknown';}
+function resultBox(type,html){const styles={success:'background:#EFF6EE;border:.5px solid rgba(42,101,53,.12);color:#2A6535',error:'background:#F6EDEA;border:.5px solid rgba(138,58,42,.12);color:#8A3A2A',warn:'background:#F6F0E8;border:.5px solid rgba(122,90,40,.12);color:#7A5A28'};return`<div style="${styles[type]||styles.warn};border-radius:12px;padding:13px 16px;font-size:13px;line-height:1.6">${html}</div>`;}
+
+function handleGmailCSV(file){if(!file)return;const el=document.getElementById('gmail-result');if(!file.name.toLowerCase().includes('.csv')){el.innerHTML=resultBox('error','Please upload a .csv file.');return;}el.innerHTML='<p style="font-size:13px;color:var(--stone-lt);font-style:italic">Reading...</p>';const reader=new FileReader();reader.onload=function(e){try{const rows=parseCSV(e.target.result);if(!rows.length){el.innerHTML=resultBox('error','File appears empty.');return;}if(!('tracking' in rows[0])&&!('tracking_number' in rows[0])){el.innerHTML=resultBox('warn','Column mismatch. Got: '+Object.keys(rows[0]).join(', '));return;}let added=0,skipped=0,errors=0;rows.forEach((row,idx)=>{const tracking=(row.tracking||row.tracking_number||'').trim().toUpperCase();if(!tracking){errors++;return;}if(shipments.find(s=>s.tracking===tracking)){skipped++;return;}const carrier=normalizeCarrier(row.carrier||'');shipments.unshift({id:'g'+Date.now()+idx,tracking,carrier,direction:(row.direction||'inbound').trim(),contact:(row.contact||row.vendor_name||'').trim(),customer_name:(row.customer_name||'').trim(),vendor_name:(row.vendor_name||row.contact||'').trim(),order_number:(row.order_number||'').trim(),description:(row.description||'').trim().slice(0,120),status:normalizeStatus(row.status||'Unknown'),estDelivery:(row.estdelivery||row.estimated_delivery_date||'').trim(),tags:(row.tags||'gmail-import').split(',').map(t=>t.trim()).filter(Boolean),notes:(row.notes||'').trim(),cost:'',source:'gmail',is_stale:false,exception_reason:'',tracking_url:({'UPS':`https://www.ups.com/track?tracknum=${tracking}`,'USPS':`https://tools.usps.com/go/TrackConfirmAction?tLabels=${tracking}`,'FedEx':`https://www.fedex.com/fedextrack/?trknbr=${tracking}`})[carrier]||row.tracking_url||'',lastCarrierUpdate:'',lastChecked:today,addedAt:(row.addedat||today)});added++;});renderAll();document.getElementById('gmail-file-input').value='';el.innerHTML=resultBox('success',`<strong>${added}</strong> inbound shipment${added!==1?'s':''} imported${skipped?` · ${skipped} duplicate${skipped!==1?'s':''} skipped`:''}${errors?` · ${errors} row${errors!==1?'s':''} skipped`:''}.`);toast(`${added} Gmail shipments loaded.`,'success');}catch(err){el.innerHTML=resultBox('error','Parse error: '+err.message);}};reader.readAsText(file);}
+
+function handlePirateShipCSV(file){if(!file)return;const el=document.getElementById('csv-result');el.innerHTML='<p style="font-size:13px;color:var(--stone-lt);font-style:italic">Parsing...</p>';const reader=new FileReader();reader.onload=function(e){try{const rows=parseCSV(e.target.result);if(!rows.length){el.innerHTML=resultBox('error','File empty.');return;}const col=(row,...keys)=>{for(const k of keys){if(row[k]!==undefined&&row[k]!=='')return row[k].trim();}return'';};let added=0,skipped=0;rows.forEach((row,idx)=>{const tracking=col(row,'tracking','tracking number','trackingnumber','tracking #');if(!tracking)return;if(shipments.find(s=>s.tracking===tracking)){skipped++;return;}const carrier=normalizeCarrier(col(row,'carrier','service','mail class'));const recipient=col(row,'recipient','recipient name','name','to name');const city=col(row,'city','to city','tocity');const state=col(row,'state','to state','tostate');const cost=col(row,'cost','postage','rate','price','amount');const shipDate=col(row,'date','ship date','shipdate','created');shipments.unshift({id:'ps'+Date.now()+idx,tracking,carrier,direction:'outbound',contact:recipient||'',customer_name:recipient||'',vendor_name:'',order_number:'',description:[city,state].filter(Boolean).length?`Shipment to ${[city,state].filter(Boolean).join(', ')}`:'Pirate Ship outbound',status:normalizeStatus(col(row,'status','delivery status')||'Label Created'),estDelivery:'',tags:['pirateship'],notes:'',cost:cost?(cost.startsWith('$')?cost:'$'+cost):'',source:'pirateship',is_stale:false,exception_reason:'',tracking_url:({'UPS':`https://www.ups.com/track?tracknum=${tracking}`,'USPS':`https://tools.usps.com/go/TrackConfirmAction?tLabels=${tracking}`,'FedEx':`https://www.fedex.com/fedextrack/?trknbr=${tracking}`})[carrier]||'',lastCarrierUpdate:'',lastChecked:today,addedAt:shipDate||today});added++;});renderAll();document.getElementById('ps-file-input').value='';el.innerHTML=resultBox('success',`<strong>${added}</strong> outbound shipment${added!==1?'s':''} imported${skipped?` · ${skipped} duplicate${skipped!==1?'s':''} skipped`:''}`);toast(`${added} Pirate Ship shipments loaded.`,'success');}catch(err){el.innerHTML=resultBox('error','Parse error: '+err.message);}};reader.readAsText(file);}
+
+function saveApiUrl(){const url=document.getElementById('api-url-input').value.trim();settings.apiUrl=url;saveSettings();document.getElementById('api-endpoint-display').textContent=url||'Not configured';toast('API URL saved.','success');}
+function saveAftershipKey(){const key=document.getElementById('aftership-key-input').value.trim();settings.aftershipKey=key;saveSettings();updateApiStatus();toast('AfterShip key saved.','success');}
+function testAftershipKey(){const el=document.getElementById('aftership-test-result');el.textContent='Testing...';el.style.color='var(--stone-lt)';setTimeout(()=>{const key=settings.aftershipKey||document.getElementById('aftership-key-input').value.trim();if(!key){el.textContent='No key set.';return;}el.textContent='Key saved — will verify on next tracking refresh.';el.style.color='#2A6535';},800);}
+function updateApiStatus(){const hasKey=!!(settings.aftershipKey);const dot=document.getElementById('api-dot-aftership');const status=document.getElementById('api-aftership-status');const badge=document.getElementById('aftership-status');if(dot)dot.className='api-status-dot '+(hasKey?'connected':'missing');if(status)status.textContent=hasKey?'API key configured — live tracking enabled':'Not configured — live tracking disabled';if(badge){badge.className=hasKey?'pill-connected':'pill-missing';badge.textContent=hasKey?'Connected':'Not configured';}}
+function runSyncNow(){toast('Sync triggered — check Apps Script logs for details.','default');}
+function exportCSV(){const headers=['tracking','carrier','direction','customer_name','vendor_name','description','status','estDelivery','cost','order_number','lastCarrierUpdate','tracking_url'];const rows=shipments.map(s=>headers.map(h=>`"${(s[h]||'').toString().replace(/"/g,'""')}"`).join(','));const csv=[headers.join(','),...rows].join('\n');const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download=`shiptrack-export-${today}.csv`;a.click();}
+function clearData(){if(confirm('Reset?')){shipments=[];renderAll();nav('dashboard');toast('Reset.','default');}}
+
+const PAGE_MAP={dashboard:'view-dashboard',all:'view-all',inbound:'view-inbound',outbound:'view-outbound',add:'view-add',bulk:'view-bulk',alerts:'view-alerts',map:'view-map',mailboxes:'view-mailboxes',inventory:'view-inventory',fbainventory:'view-fbainventory',catalog:'view-catalog',fbashipments:'view-fbashipments',receipts:'view-receipts',import:'view-import',integrations:'view-integrations',settings:'view-settings'};
+const TITLE_MAP={dashboard:'Dashboard',all:'All Shipments',inbound:'Inbound Packages',outbound:'Outbound Shipments',add:'Add Shipment',bulk:'Bulk Add',alerts:'Alerts',map:'Network Map',mailboxes:'Mailbox Directory',inventory:'Inventory',fbainventory:'FBA Inventory',catalog:'Product Catalog',fbashipments:'FBA Shipments',receipts:'Receipts',import:'Import / CSV',integrations:'Integrations',settings:'Settings'};
+const NAV_IDX={dashboard:0,all:1,inbound:2,outbound:3,add:4,bulk:5,alerts:6,map:7,mailboxes:8,inventory:9,fbainventory:10,catalog:11,fbashipments:12,receipts:13,import:14,integrations:15,settings:16};
+
+function nav(page){document.querySelectorAll('.page-view').forEach(v=>v.classList.remove('active'));document.querySelectorAll('.nav-item').forEach(v=>v.classList.remove('active'));const view=document.getElementById(PAGE_MAP[page]);if(view)view.classList.add('active');const items=document.querySelectorAll('.nav-item');if(items[NAV_IDX[page]])items[NAV_IDX[page]].classList.add('active');document.getElementById('topbar-title').textContent=TITLE_MAP[page]||page;if(page==='all')renderMainTable();if(page==='inbound')renderDirTable('in');if(page==='outbound')renderDirTable('out');if(page==='alerts')renderAlerts();if(page==='dashboard')renderDashboard();if(page==='integrations'){updateSyncUI();updateApiStatus();}if(page==='fbainventory')loadFBAInventoryPage();
+if(page==='inventory')loadInventory();
+if(page==='catalog')loadCatalog();
+if(page==='fbashipments')loadFBAShipments();
+if(page==='receipts')loadReceipts();
+if(page==='map')initMap();
+if(page==='mailboxes')loadMailboxes();if(settings.aftershipKey&&document.getElementById('aftership-key-input'))document.getElementById('aftership-key-input').value='••••••••••••••••';}
+function setDirTab(el,val){dirFilter=val;document.querySelectorAll('#dir-tabs .filter-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderMainTable();}
+function onGlobalSearch(){const q=document.getElementById('globalSearch').value;if(q.length>0){if(document.getElementById('filter-search'))document.getElementById('filter-search').value=q;nav('all');}}
+function toast(msg,type='default'){const wrap=document.getElementById('toasts');const el=document.createElement('div');el.className=`toast ${type}`;el.innerHTML=`<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="8"/><path d="M10 7v3M10 13h.01"/></svg>${msg}`;wrap.appendChild(el);setTimeout(()=>el.remove(),4000);}
+function renderAll(){renderDashboard();renderMainTable();renderDirTable('in');renderDirTable('out');}
+
+async function loadFromSupabase(){
+  try{const res=await fetch(`${SUPABASE_URL}/rest/v1/shipments?select=*&order=added_at.desc&limit=500`,{headers:{'apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`}});if(!res.ok)throw new Error('Failed to fetch');const data=await res.json();if(Array.isArray(data)&&data.length>0){shipments=data.map(s=>({id:s.id,tracking:s.tracking_number,carrier:s.carrier,direction:s.shipment_direction,contact:s.contact||s.vendor_name||s.customer_name||'',customer_name:s.customer_name||'',vendor_name:s.vendor_name||'',order_number:s.order_number||'',description:s.description||'',status:s.status_category||s.current_status||'Unknown',estDelivery:s.estimated_delivery_date||'',lastCarrierUpdate:s.last_carrier_update||'',lastChecked:s.last_checked_at||'',notes:s.notes||'',cost:s.cost||'',tags:s.tags||[],source:s.sync_source||'manual',is_stale:s.is_stale||false,exception_reason:s.exception_reason||'',tracking_url:s.tracking_url||'',addedAt:s.added_at||''}));}}catch(e){console.error('Supabase load error:',e);}
+  updateApiStatus();renderAll();
+  document.getElementById('dash-date').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}).toUpperCase();
+}
+
+let editingId=null;
+function editRow(id){const s=shipments.find(s=>s.id===id);if(!s)return;editingId=id;document.getElementById('edit-tracking').value=s.tracking;document.getElementById('edit-carrier').value=s.carrier;document.getElementById('edit-direction').value=s.direction;document.getElementById('edit-status').value=s.status;document.getElementById('edit-contact').value=s.customer_name||s.contact||'';document.getElementById('edit-date').value=s.estDelivery||'';document.getElementById('edit-desc').value=s.description||'';document.getElementById('edit-order').value=s.order_number||'';document.getElementById('edit-cost').value=s.cost||'';document.getElementById('edit-notes').value=s.notes||'';const modal=document.getElementById('edit-modal');modal.style.display='flex';}
+function closeEdit(){document.getElementById('edit-modal').style.display='none';editingId=null;}
+async function saveEdit(){if(!editingId)return;const msg=document.getElementById('edit-msg');const showMsg=(text,type)=>{msg.textContent=text;msg.className=`form-msg ${type}`;msg.style.display='block';setTimeout(()=>msg.style.display='none',4000);};const carrier=document.getElementById('edit-carrier').value;const tracking=shipments.find(s=>s.id===editingId)?.tracking||'';const urlMap={'UPS':`https://www.ups.com/track?tracknum=${tracking}`,'USPS':`https://tools.usps.com/go/TrackConfirmAction?tLabels=${tracking}`,'FedEx':`https://www.fedex.com/fedextrack/?trknbr=${tracking}`};const updates={carrier,shipment_direction:document.getElementById('edit-direction').value,contact:document.getElementById('edit-contact').value.trim(),customer_name:document.getElementById('edit-contact').value.trim(),current_status:document.getElementById('edit-status').value,status_category:document.getElementById('edit-status').value,estimated_delivery_date:document.getElementById('edit-date').value||null,description:document.getElementById('edit-desc').value.trim(),order_number:document.getElementById('edit-order').value.trim(),cost:document.getElementById('edit-cost').value.trim(),notes:document.getElementById('edit-notes').value.trim(),tracking_url:urlMap[carrier]||'',updated_at:new Date().toISOString()};try{const res=await fetch(`${SUPABASE_URL}/rest/v1/shipments?id=eq.${editingId}`,{method:'PATCH',headers:{'apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(updates)});if(!res.ok){const err=await res.text();return showMsg('Save failed: '+err.slice(0,100),'error');}showMsg('Saved!','success');setTimeout(async()=>{closeEdit();await loadFromSupabase();renderAll();},800);}catch(e){showMsg('Network error: '+e.message,'error');}}
+
+// ─── MAILBOXES ────────────────────────────────────────────────────────────────
+let mailboxes=[],mbFilter='all',editingMbId=null;
+
+async function viewMailboxShipments(mbId, mbName){
+  const modal=document.getElementById('mb-shipments-modal');
+  const tbody=document.getElementById('mb-shipments-tbody');
+  const empty=document.getElementById('mb-shipments-empty');
+  const mb=mailboxes.find(m=>m.id===mbId);
+  document.getElementById('mb-shipments-title').textContent=mbName;
+  document.getElementById('mb-shipments-address').textContent=mb?.address||'';
+  tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--stone-lt)">Loading…</td></tr>';
+  modal.style.display='flex';
+
+  // Match by name — find all shipments where customer_name or contact matches
+  const nameNorm=mbName.toLowerCase().trim();
+  const matched=shipments.filter(s=>{
+    const cn=(s.customer_name||'').toLowerCase().trim();
+    const co=(s.contact||'').toLowerCase().trim();
+    const vn=(s.vendor_name||'').toLowerCase().trim();
+    return cn===nameNorm||co===nameNorm||vn===nameNorm||
+           cn.includes(nameNorm.split(' ')[0])||
+           (nameNorm.split(' ')[0]&&cn.startsWith(nameNorm.split(' ')[0]));
+  });
+
+  empty.style.display=matched.length?'none':'block';
+  tbody.innerHTML=matched.length?matched.map(s=>`<tr>
+    <td class="td-tracking">${s.tracking.slice(0,20)}${s.tracking.length>20?'…':''}</td>
+    <td>${carrierBadge(s.carrier)}</td>
+    <td>${dirBadge(s.direction)}</td>
+    <td style="font-size:12px;color:var(--stone);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.description||'—'}</td>
+    <td>${statusBadge(s.status)}</td>
+    <td class="td-muted">${fmtDate(s.estDelivery)}</td>
+    <td class="td-muted">${fmtRelative(s.lastCarrierUpdate||s.lastChecked)}</td>
+    <td>${trackBtn(s)}</td>
+  </tr>`).join(''):'';
+}
+
+async function loadMailboxes(){
+  try{
+    const res=await fetch(`${SUPABASE_URL}/rest/v1/mailboxes?select=*&order=name.asc`,{headers:{'apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`}});
+    if(!res.ok)throw new Error('Failed');
+    mailboxes=await res.json();
+    document.getElementById('nav-mb-count').textContent=mailboxes.filter(m=>m.active).length;
+    renderMailboxes();
+  }catch(e){console.error('Mailbox load error:',e);}
+}
+
+function setMbTab(el,val){mbFilter=val;document.querySelectorAll('#mb-status-tabs .filter-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderMailboxes();}
+
+function renderMailboxes(){
+  const q=(document.getElementById('mb-search')?.value||'').toLowerCase();
+  const state=document.getElementById('mb-state')?.value||'';
+  let data=mailboxes.filter(m=>{
+    if(mbFilter==='active'&&!m.active)return false;
+    if(mbFilter==='inactive'&&m.active)return false;
+    if(state&&!m.address?.includes(`, ${state} `))return false;
+    if(q&&!([m.name,m.email,m.phone,m.address,m.notes].join(' ').toLowerCase().includes(q)))return false;
+    return true;
+  });
+  document.getElementById('mb-count-label').textContent=`${data.length} mailbox${data.length!==1?'es':''}`;
+  document.getElementById('mb-empty').style.display=data.length?'none':'block';
+  document.getElementById('mb-tbody').innerHTML=data.map((m,i)=>`<tr style="cursor:pointer" onclick="viewMailboxShipments('${m.id}','${m.name.replace(/'/g,"\\'")}')">
+    <td style="font-size:12px;color:var(--stone-lt)">${i+1}</td>
+    <td><div class="td-name">${m.name}</div></td>
+    <td style="font-size:12px;color:var(--stone)">${m.email||'—'}</td>
+    <td style="font-size:12px;color:var(--stone)">${m.phone||'—'}</td>
+    <td style="font-size:12px;color:var(--stone);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${m.address||''}">${m.address||'—'}</td>
+    <td style="font-size:12px;color:var(--stone)">${m.monthly_cost?'$'+parseFloat(m.monthly_cost).toFixed(2):'—'}</td>
+    <td><span class="badge ${m.active?'badge-delivered':'badge-returned'}">${m.active?'Active':'Closed'}</span></td>
+    <td><div class="td-actions" onclick="event.stopPropagation()">
+      <button class="btn-refresh-row" onclick="openEditMailbox('${m.id}')" title="Edit"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 3l3 3-10 10H4v-3L14 3z"/></svg></button>
+      <button style="background:none;border:none;cursor:pointer;color:var(--stone-lt);padding:4px 8px;border-radius:6px;font-size:12px" onclick="deleteMailbox('${m.id}','${m.name.replace(/'/g,"\\'")}')">✕</button>
+    </div></td>
+  </tr>`).join('');
+}
+
+function openAddMailbox(){editingMbId=null;document.getElementById('mb-modal-title').textContent='Add Mailbox';['mb-name','mb-email','mb-phone','mb-cost','mb-address','mb-notes'].forEach(id=>document.getElementById(id).value='');document.getElementById('mb-active').value='true';document.getElementById('mb-modal').style.display='flex';}
+
+function openEditMailbox(id){
+  const m=mailboxes.find(m=>m.id===id);if(!m)return;
+  editingMbId=id;
+  document.getElementById('mb-modal-title').textContent='Edit Mailbox';
+  document.getElementById('mb-name').value=m.name||'';
+  document.getElementById('mb-email').value=m.email||'';
+  document.getElementById('mb-phone').value=m.phone||'';
+  document.getElementById('mb-cost').value=m.monthly_cost?'$'+parseFloat(m.monthly_cost).toFixed(2):'';
+  document.getElementById('mb-address').value=m.address||'';
+  document.getElementById('mb-active').value=m.active?'true':'false';
+  document.getElementById('mb-notes').value=m.notes||'';
+  document.getElementById('mb-modal').style.display='flex';
+}
+
+function closeMbModal(){document.getElementById('mb-modal').style.display='none';editingMbId=null;}
+
+async function saveMailbox(){
+  const msg=document.getElementById('mb-msg');
+  const showMsg=(text,type)=>{msg.textContent=text;msg.className=`form-msg ${type}`;msg.style.display='block';setTimeout(()=>msg.style.display='none',4000);};
+  const name=document.getElementById('mb-name').value.trim();
+  const address=document.getElementById('mb-address').value.trim();
+  if(!name)return showMsg('Name is required.','error');
+  const costRaw=document.getElementById('mb-cost').value.replace('$','').trim();
+  const record={name,email:document.getElementById('mb-email').value.trim(),phone:document.getElementById('mb-phone').value.trim(),address,monthly_cost:costRaw?parseFloat(costRaw):null,active:document.getElementById('mb-active').value==='true',notes:document.getElementById('mb-notes').value.trim(),updated_at:new Date().toISOString()};
+  try{
+    let res;
+    if(editingMbId){
+      res=await fetch(`${SUPABASE_URL}/rest/v1/mailboxes?id=eq.${editingMbId}`,{method:'PATCH',headers:{'apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(record)});
+    }else{
+      res=await fetch(`${SUPABASE_URL}/rest/v1/mailboxes`,{method:'POST',headers:{'apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(record)});
+    }
+    if(!res.ok){const err=await res.text();return showMsg('Save failed: '+err.slice(0,100),'error');}
+    showMsg('Saved!','success');
+    setTimeout(async()=>{closeMbModal();await loadMailboxes();},800);
+  }catch(e){showMsg('Network error: '+e.message,'error');}
+}
+
+async function deleteMailbox(id,name){
+  if(!confirm(`Remove mailbox for ${name}?`))return;
+  try{
+    const res=await fetch(`${SUPABASE_URL}/rest/v1/mailboxes?id=eq.${id}`,{method:'DELETE',headers:{'apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`}});
+    if(!res.ok){toast('Delete failed','default');return;}
+    await loadMailboxes();toast('Mailbox removed.','default');
+  }catch(e){toast('Network error: '+e.message,'default');}
+}
+
+function exportMailboxCSV(){
+  const headers=['name','email','phone','address','monthly_cost','active','notes'];
+  const rows=mailboxes.map(m=>headers.map(h=>`"${(m[h]||'').toString().replace(/"/g,'""')}"`).join(','));
+  const csv=[headers.join(','),...rows].join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download=`mailboxes-export-${today}.csv`;
+  a.click();
+}
+
+// ─── NETWORK MAP ─────────────────────────────────────────────────────────────
+let mapInstance=null;
+
+const WAREHOUSE={name:'NELK Warehouse',address:'407 E Ayre St, Wilmington, DE 19804',lat:39.7285,lng:-75.5458,isWarehouse:true};
+
+const MAILBOX_LOCATIONS=[
+  {name:'Gregory Hershkowitz',address:'300 Delaware Ave, Wilmington, DE',lat:39.7391,lng:-75.5447},
+  {name:'Josh Klein',address:'2803 Philadelphia Pike, Claymont, DE',lat:39.7992,lng:-75.4599},
+  {name:'Ronald Reginald',address:'407 E Ayre St, Wilmington, DE',lat:39.7285,lng:-75.5458},
+  {name:'Jared Smith',address:'24A Trolley Square, Wilmington, DE',lat:39.7437,lng:-75.5563},
+  {name:'Nick Dufond',address:'7209 Lancaster Pike, Hockessin, DE',lat:39.7837,lng:-75.6892},
+  {name:'Bobby Fin',address:'18585 Coastal Hwy, Rehoboth Beach, DE',lat:38.7109,lng:-75.0799},
+  {name:'Jack Froman',address:'1536 State Route 23, Wayne, NJ',lat:40.9440,lng:-74.2543},
+  {name:'Joe Celine',address:'98 US Hwy 46, Budd Lake, NJ',lat:40.8762,lng:-74.7381},
+  {name:'Bradley White',address:'300 Main St, Madison, NJ',lat:40.7598,lng:-74.4154},
+  {name:'Ethan Davis',address:'2040 Millburn Ave, Maplewood, NJ',lat:40.7317,lng:-74.2732},
+  {name:'Madison Young',address:'2600 Tilton Road, Egg Harbor Township, NJ',lat:39.3776,lng:-74.6057},
+  {name:'Jackson Hill',address:'485 Georges Rd, Dayton, NJ',lat:40.3829,lng:-74.5096},
+  {name:'Emily Wilson',address:'44 Washington St, Morristown, NJ',lat:40.7968,lng:-74.4774},
+  {name:'Sara Lee',address:'1070 State Route 34, Matawan, NJ',lat:40.4168,lng:-74.2299},
+  {name:'George David',address:'335 George St, New Brunswick, NJ',lat:40.4959,lng:-74.4474},
+  {name:'Samantha Zeller',address:'48 Bi-State Plaza, Old Tappan, NJ',lat:41.0168,lng:-73.9954},
+  {name:'Helen Fiener',address:'7216 Bergenline Ave, North Bergen, NJ',lat:40.7945,lng:-74.0298},
+  {name:'Jared Harell',address:'2360 Route 33, Robbinsville, NJ',lat:40.2168,lng:-74.5946},
+  {name:'Joshua Clark',address:'288 Egg Harbor Road, Sewell, NJ',lat:39.7487,lng:-75.1060},
+  {name:'Kayla Young',address:'115 Philadelphia Ave, Egg Harbor City, NJ',lat:39.5282,lng:-74.6574},
+  {name:'Ryan Walker',address:'5051 Rt 42, Turnersville, NJ',lat:39.7668,lng:-75.0446},
+  {name:'Kevin Carter',address:'865 NJ 33, Freehold, NJ',lat:40.2615,lng:-74.2777},
+  {name:'Amy Phillips',address:'267 Hackensack St, Wood Ridge, NJ',lat:40.8498,lng:-74.0882},
+  {name:'Jerry Eifert',address:'1789 Rt 27, Edison, NJ',lat:40.5187,lng:-74.4121},
+  {name:'Benjamin King',address:'923 Elm St, Manchester, NH',lat:42.9956,lng:-71.4548},
+  {name:'Chelsea Rivera',address:'50A Northwestern Drive, Salem, NH',lat:42.7954,lng:-71.2006},
+  {name:'Charles Ward',address:'20 Portsmouth Avenue, Stratham, NH',lat:43.0187,lng:-70.9221},
+  {name:'Deborah Sullivan',address:'2430 Butler Street, Easton, PA',lat:40.6884,lng:-75.2207},
+  {name:'Keith Cole',address:'859 US-130, East Windsor, NJ',lat:40.2637,lng:-74.5218},
+  {name:'Lori Nguyen',address:'5510 Cherokee Ave, Alexandria, VA',lat:38.8304,lng:-77.1199},
+  {name:'Kurt Colebane',address:'3330 W 26th St, Erie, PA',lat:42.1167,lng:-80.1345},
+  {name:'Dawn Rhodes',address:'11300 Lawyers Rd, Mint Hill, NC',lat:35.1796,lng:-80.6498},
+  {name:'Marlene Fuller',address:'908 Henrietta Ave, Huntingdon Valley, PA',lat:40.1393,lng:-75.0621},
+  {name:'Leo Scott',address:'112 N Flowers Mill Rd, Langhorne, PA',lat:40.1748,lng:-74.9221},
+  {name:'Jason Eisen',address:'13 Summit Square Ctr, Langhorne, PA',lat:40.1765,lng:-74.9176},
+  {name:'Matt Murray',address:'1331 Lincoln Hwy, Levittown, PA',lat:40.1534,lng:-74.8349},
+  {name:'Kyler Swansby',address:'3401 Hartzdale Drive, Camp Hill, PA',lat:40.2376,lng:-76.9274},
+  {name:'Isaac Phillips',address:'7244 Castor Ave, Philadelphia, PA',lat:40.0437,lng:-75.0754},
+  {name:'Sebastian Murphy',address:'744 South Street, Philadelphia, PA',lat:39.9418,lng:-75.1532},
+  {name:'Gavin Barnes',address:'632 N 2nd St, Philadelphia, PA',lat:39.9632,lng:-75.1432},
+  {name:'Connor Howard',address:'7311 Oxford Ave, Philadelphia, PA',lat:40.0598,lng:-75.0887},
+  {name:'Joshua Bailey',address:'197 Kenwood Dr N, Levittown, PA',lat:40.1565,lng:-74.8521},
+  {name:'Harrison Storck',address:'3133 Maple Dr NE, Atlanta, GA',lat:33.8376,lng:-84.3654},
+  {name:'Rebeka Holstead',address:'45 E City Ave, Bala Cynwyd, PA',lat:40.0098,lng:-75.2187},
+  {name:'Noah Williams',address:'1000 Main St, Pittsburgh, PA',lat:40.4432,lng:-79.9921},
+  {name:'Jerry Harrison',address:'219 N Main Ave, Scranton, PA',lat:41.4090,lng:-75.6624},
+  {name:'Harry Loeper',address:'305 Roseto Ave, Roseto, PA',lat:40.8654,lng:-75.2249},
+  {name:'Xavier Wood',address:'4712 Penn Ave, Sinking Spring, PA',lat:40.3243,lng:-75.9665},
+  {name:'Liam Green',address:'125 S Lexington Ave, Asheville, NC',lat:35.5651,lng:-82.5515},
+  {name:'Quin Gusch',address:'920 US 64 HWY W, Apex, NC',lat:35.7326,lng:-78.8503},
+  {name:'Tessa Hall',address:'4 Long Shoals Road, Arden, NC',lat:35.4776,lng:-82.5421},
+  {name:'Hank Scott',address:'112 Argus Ln, Mooresville, NC',lat:35.5843,lng:-80.8093},
+  {name:'Alex Stromer',address:'5820 E W.T. Harris Blvd, Charlotte, NC',lat:35.2271,lng:-80.7209},
+  {name:'Noah Foster',address:'921 Town Centre Blvd, Clayton, NC',lat:35.6532,lng:-78.4587},
+  {name:'Carl Schnieder',address:'63 Sarazen Dr, Clayton, NC',lat:35.6398,lng:-78.4612},
+  {name:'Oliver Hill',address:'6255 Towncenter Dr, Clemmons, NC',lat:36.0254,lng:-80.3887},
+  {name:'Kailey Williams',address:'5011 Weddington Rd, Concord, NC',lat:35.4087,lng:-80.6243},
+  {name:'Mark Andrews',address:'726 N Main St, Fuquay-Varina, NC',lat:35.5843,lng:-78.8001},
+  {name:'Tamaya Johnson',address:'195 Cooper Creek Dr, Mocksville, NC',lat:35.8921,lng:-80.5632},
+  {name:'Jason Talborn',address:'1633 New Garden Rd, Greensboro, NC',lat:36.0954,lng:-79.8776},
+  {name:'Paul Clarckson',address:'1726 W 5th St, Greenville, NC',lat:35.6132,lng:-77.3998},
+  {name:'Jon Stringer',address:'2120 E Fire Tower Rd, Greenville, NC',lat:35.6065,lng:-77.3543},
+  {name:'Leah Vega',address:'224 Thompson St, Hendersonville, NC',lat:35.3165,lng:-82.4609},
+  {name:'Steve Jones',address:'201 Alston Blvd, Hampstead, NC',lat:34.3598,lng:-77.7187},
+  {name:'Noah Eisen',address:'14316 Reese Blvd, Huntersville, NC',lat:35.4132,lng:-80.8498},
+  {name:'Greg Boswin',address:'119 S Main St, Kernersville, NC',lat:36.1198,lng:-80.0732},
+  {name:'Yakov Hershkowitz',address:'4033 Village Park Dr, Knightdale, NC',lat:35.7876,lng:-78.4998},
+  {name:'Eli Harris',address:'1108 New Pointe Blvd, Leland, NC',lat:34.2143,lng:-78.0498},
+  {name:'Malissa Horowitz',address:'514 E Dixie Dr, Asheboro, NC',lat:35.7087,lng:-79.8065},
+  {name:'Sabrina Brown',address:'50 E Main St, Thomasville, NC',lat:35.8826,lng:-80.0832},
+  {name:'Katie Isler',address:'5540 Centerview Dr, Raleigh, NC',lat:35.7398,lng:-78.7543},
+  {name:'Katherine Smith',address:'1030 N Rogers Ln, Raleigh, NC',lat:35.7832,lng:-78.5687},
+  {name:'Zay Darian',address:'631 Brawley School Rd, Mooresville, NC',lat:35.5754,lng:-80.8332},
+  {name:'Ariel Kingston',address:'125 Trade Ct, Mooresville, NC',lat:35.5776,lng:-80.8221},
+  {name:'Rashad Manning',address:'4130 Durham Rd, Roxboro, NC',lat:36.3987,lng:-78.9832},
+  {name:'Sasha Baren',address:'707 Union Chapel Rd, Pembroke, NC',lat:34.6832,lng:-79.1943},
+  {name:'Simon Tracy',address:'222 Central Park Ave, Pinehurst, NC',lat:35.1954,lng:-79.4687},
+  {name:'Zack Wilson',address:'257 Flagstone Ln, Raeford, NC',lat:34.9876,lng:-79.2243},
+  {name:'Bella Singer',address:'3434-135 Kildaire Farm Rd, Cary, NC',lat:35.7621,lng:-78.8176},
+  {name:'Jesse Wayne',address:'391 Carolina Forest Blvd, Jacksonville, NC',lat:34.7543,lng:-77.4298},
+  {name:'Max Stevens',address:'1323 Scotland Crossing Dr, Laurinburg, NC',lat:34.7743,lng:-79.4632},
+  {name:'Ivan Campos',address:'3116 Weddington Rd, Matthews, NC',lat:35.1198,lng:-80.7098},
+  {name:'Kimberly Buggs',address:'506 Granville Corners, Oxford, NC',lat:36.3098,lng:-78.5887},
+  {name:'Alexander Singleton',address:'16131 Lancaster Hwy, Charlotte, NC',lat:35.0887,lng:-80.8876},
+  {name:'Savanah Hershington',address:'2920 Forestville Rd, Raleigh, NC',lat:35.8643,lng:-78.5298},
+  {name:'Anastasia Rogers',address:'1852 Banking Street, Greensboro, NC',lat:36.0732,lng:-79.8398},
+  {name:'David Koffinger',address:'3661 Sunset Ave, Rocky Mount, NC',lat:35.9376,lng:-77.8087},
+  {name:'Jay Jennings',address:'6779 Overhills Rd, Spring Lake, NC',lat:35.1865,lng:-78.9798},
+  {name:'Jamal Kensington',address:'12400 Wake Union Church Rd, Wake Forest, NC',lat:35.9798,lng:-78.5398},
+  {name:'Zachary Pearson',address:'1306 E Millbrook Rd, Raleigh, NC',lat:35.8287,lng:-78.6198},
+  {name:'Mason Brooks',address:'8609 Westwood Center Dr, Vienna, VA',lat:38.9043,lng:-77.2576},
+  {name:'Emma Roberts',address:'278 Cedar Ln SE, Vienna, VA',lat:38.9012,lng:-77.2654},
+  {name:'Ava Carter',address:'1550 Wilson Blvd, Arlington, VA',lat:38.8876,lng:-77.0776},
+  {name:'Ethan Green',address:'13950 US 50 W, Chantilly, VA',lat:38.8943,lng:-77.4354},
+  {name:'Madison Hayes',address:'13926 Hull Street Rd, Midlothian, VA',lat:37.4498,lng:-77.6443},
+  {name:'Lucas Parker',address:'110 Coliseum Crossing, Hampton, VA',lat:37.0398,lng:-76.3432},
+  {name:'Oliver Davis',address:'11166 Fairfax Blvd, Fairfax, VA',lat:38.8487,lng:-77.3076},
+  {name:'Lily Foster',address:'11357 Nuckols Rd, Glen Allen, VA',lat:37.6765,lng:-77.5387},
+  {name:'Isabella Wright',address:'609 E Main St, Purcellville, VA',lat:39.1365,lng:-77.7098},
+  {name:'Noah Bennett',address:'21 North Broad Street, Luray, VA',lat:38.6654,lng:-78.4587},
+  {name:'Sophia Mitchell',address:'449 E Nelson St, Lexington, VA',lat:37.7843,lng:-79.4432},
+  {name:'James Anderson',address:'1520 Belle View Blvd, Alexandria, VA',lat:38.7787,lng:-77.0598},
+  {name:'William Clark',address:'2142 Richmond Hwy, Stafford, VA',lat:38.4221,lng:-77.4087},
+  {name:'Charlotte Evans',address:'10408 Courthouse Rd, Spotsylvania, VA',lat:38.2165,lng:-77.5998},
+  {name:'Amelia Lewis',address:'7918 Jones Branch Dr, McLean, VA',lat:38.9265,lng:-77.2198},
+  {name:'Terry Sprung',address:'8115 Judith Ln, Mechanicsville, VA',lat:37.6143,lng:-77.3832},
+  {name:'Eliana Brand',address:'585 Grove St, Herndon, VA',lat:38.9698,lng:-77.3865},
+  {name:'Alina Laroi',address:'3214 Electric Rd, Roanoke, VA',lat:37.2498,lng:-79.9876},
+  {name:'Aaron Brown',address:'1832 Kempsville Rd, Virginia Beach, VA',lat:36.7698,lng:-76.0443},
+  {name:'Celina Smith',address:'42841 Creek View Plaza, Ashburn, VA',lat:39.0432,lng:-77.4876},
+  {name:'Jerry Tomson',address:'800 East Main St, Wytheville, VA',lat:36.9487,lng:-81.0843},
+  {name:'David Kingston',address:'2606 Hilliard Rome Rd, Hilliard, OH',lat:40.0354,lng:-83.1587},
+  {name:'Ella Harris',address:'3296 Westerville Rd, Columbus, OH',lat:40.0598,lng:-82.9765},
+  {name:'Jack Wilson',address:'1121 Worthington Woods Blvd, Columbus, OH',lat:40.1098,lng:-83.0132},
+  {name:'Daniel Walker',address:'15728 Lorain Ave, Cleveland, OH',lat:41.4621,lng:-81.8432},
+  {name:'Scarlett Scott',address:'1917 S Taylor Road, Cleveland Heights, OH',lat:41.5098,lng:-81.5765},
+  {name:'Grace Thomas',address:'4845 Market St, Youngstown, OH',lat:41.0987,lng:-80.6432},
+  {name:'Josh Horowitz',address:'1630 Schiller Ave, Cuyahoga Falls, OH',lat:41.1354,lng:-81.4876},
+  {name:'Sari Miller',address:'11811 Shaker Blvd, Cleveland, OH',lat:41.4798,lng:-81.5887},
+  {name:'Melina Thomas',address:'11201 Shaker Blvd, Cleveland, OH',lat:41.4743,lng:-81.5998},
+  {name:'Eyilene Fishbine',address:'46 Shopping Plaza, Chagrin Falls, OH',lat:41.4298,lng:-81.3887},
+  {name:'Youssef Fitoussi',address:'17325 Euclid Ave, Cleveland, OH',lat:41.5498,lng:-81.5287},
+  {name:'Freya Muller',address:'7554 Fredle Dr, Concord Township, OH',lat:41.6632,lng:-81.2887},
+  {name:'Darren Buffet',address:'825 N Houk Rd, Delaware, OH',lat:40.2987,lng:-83.0676},
+  {name:'Sade Okafor',address:'38513 Chestnut Ridge Rd, Elyria, OH',lat:41.3765,lng:-82.1098},
+  {name:'Salma Azoulay',address:'25000 Euclid Ave, Euclid, OH',lat:41.5932,lng:-81.5198},
+  {name:'Jamie Grand',address:'1985 W Henderson Road, Columbus, OH',lat:40.0487,lng:-83.0543},
+  {name:'Lauren Lewis',address:'3939 Massillon Rd, Uniontown, OH',lat:40.9732,lng:-81.4243},
+  {name:'Michael Turner',address:'3008 Greenmount Ave, Baltimore, MD',lat:39.3298,lng:-76.6087},
+  {name:'Mia Collins',address:'1400 W Lombard Street, Baltimore, MD',lat:39.2887,lng:-76.6354},
+  {name:'Alexander Morris',address:'11113 Baltimore Ave, Beltsville, MD',lat:39.0287,lng:-76.9143},
+  {name:'Henry Nelson',address:'4600 Powder Mill Rd, Beltsville, MD',lat:39.0243,lng:-76.9076},
+  {name:'Abigail Cooper',address:'6340 Security Blvd, Baltimore, MD',lat:39.3376,lng:-76.7387},
+  {name:'Leah Simmons',address:'12530 Fairwood Pkwy, Bowie, MD',lat:38.9554,lng:-76.7543},
+  {name:'Samuel Reed',address:'5457 Twin Knolls Rd, Columbia, MD',lat:39.2087,lng:-76.8498},
+  {name:'Ruby James',address:'9175 Guilford Rd, Columbia, MD',lat:39.1843,lng:-76.8765},
+  {name:'Nathanial Brooks',address:'64 W Central Ave, Edgewater, MD',lat:38.9332,lng:-76.5598},
+  {name:'Claire Hughes',address:'8507 Oxon Hill Rd, Fort Washington, MD',lat:38.7398,lng:-76.9954},
+  {name:'Leo Adams',address:'18310 Montgomery Village Ave, Gaithersburg, MD',lat:39.1543,lng:-77.2165},
+  {name:'Harper Gray',address:'5808 Belair Rd, Baltimore, MD',lat:39.3498,lng:-76.5543},
+  {name:'Matthew Hill',address:'10001 Derekwood Ln, Lanham, MD',lat:38.9665,lng:-76.8598},
+  {name:'Penelope Baker',address:'4500 Forbes Blvd, Lanham, MD',lat:38.9632,lng:-76.8543},
+  {name:'Violet Carter',address:'23415 Three Notch Rd, California, MD',lat:38.2987,lng:-76.5065},
+  {name:'Jackson Green',address:'6200 Baltimore Ave, Riverdale, MD',lat:38.9654,lng:-76.9287},
+  {name:'Sophie Crain',address:'6801 Kenilworth Ave, Riverdale, MD',lat:38.9621,lng:-76.9243},
+  {name:'Nick Canyon',address:'3028 Greenmount Ave, Baltimore, MD',lat:39.3276,lng:-76.6098},
+  {name:'Harold Kushner',address:'1443 Rock Spring Rd, Bel Air, MD',lat:39.5387,lng:-76.3487},
+  {name:'Lexi Lutz',address:'8850 Stanford Blvd, Columbia, MD',lat:39.1987,lng:-76.8243},
+  {name:'Eshe Adjaye',address:'4725 Dorsey Hall Dr, Ellicott City, MD',lat:39.2698,lng:-76.8632},
+  {name:'Jackie Rubin',address:'5579 Chamblee Dunwoody Rd, Dunwoody, GA',lat:33.9465,lng:-84.3376},
+  {name:'Tucker Greal',address:'2500 Dallas Hwy, Marietta, GA',lat:33.9287,lng:-84.5765},
+  {name:'Selma Patel',address:'5905 Atlanta Hwy, Alpharetta, GA',lat:34.0765,lng:-84.2943},
+  {name:'Frank Rudman',address:'1500 Southland Cir NW, Atlanta, GA',lat:33.8187,lng:-84.4232},
+  {name:'Eileen Kraft',address:'415 Peachtree Pkwy, Cumming, GA',lat:34.2065,lng:-84.1398},
+  {name:'Jimmy Beal',address:'4290 Bells Ferry Road, Kennesaw, GA',lat:34.0354,lng:-84.6154},
+  {name:'Tony Gonzalez',address:'178 Bracketts Way, Blairsville, GA',lat:34.8765,lng:-83.9876},
+  {name:'Rahul Desai',address:'4485 Fulton Industrial Blvd, Atlanta, GA',lat:33.7498,lng:-84.5287},
+  {name:'Zara Petrov',address:'6350 Lake Oconee Pkwy, Greensboro, GA',lat:33.5765,lng:-83.1876},
+  {name:'Lukas Muller',address:'680 S Main St, Baxley, GA',lat:31.7765,lng:-82.3487},
+  {name:'Paige Hill',address:'281 Young Harris St, Blairsville, GA',lat:34.8732,lng:-83.9887},
+  {name:'Nina Kowalski',address:'589 Palisade Dr, Brunswick, GA',lat:31.1498,lng:-81.4876},
+  {name:'Justin King',address:'3300 Hamilton Mill Rd, Buford, GA',lat:34.1098,lng:-83.9987},
+  {name:'Sade Diallo',address:'136 W Belmont Dr, Calhoun, GA',lat:34.5021,lng:-84.9498},
+  {name:'Chris Mitchell',address:'1860 Sandy Plains Rd, Marietta, GA',lat:34.0021,lng:-84.4598},
+  {name:'Malik Johnson',address:'4827 Old National Hwy, College Park, GA',lat:33.6498,lng:-84.4687},
+  {name:'Bo Chen',address:'4519 Woodruff Rd, Columbus, GA',lat:32.5198,lng:-84.9543},
+  {name:'Cody Torres',address:'2274 Salem Rd SE, Conyers, GA',lat:33.6687,lng:-84.0198},
+  {name:'Maxim Petrov',address:'655 Atlanta Rd, Cumming, GA',lat:34.2032,lng:-84.1421},
+  {name:'Isaah Abrams',address:'831 Auburn Rd, Dacula, GA',lat:33.9887,lng:-83.8976},
+  {name:'Ricky Shane',address:'5900 Spout Springs Rd, Flowery Branch, GA',lat:34.1876,lng:-83.9243},
+  {name:'Diego Morales',address:'1070 Montgomery Rd, Altamonte Springs, FL',lat:28.6615,lng:-81.3654},
+  {name:'Priya Ramesh',address:'2246 E Semoran Blvd, Apopka, FL',lat:28.6932,lng:-81.5087},
+  {name:'DeShawn Carter',address:'38439 5th Ave, Zephyrhills, FL',lat:28.2343,lng:-82.1821},
+  {name:'Keiko Yamamoto',address:'4834 NW 2nd Ave, Boca Raton, FL',lat:26.3754,lng:-80.0987},
+  {name:'Fernando Diaz',address:'8903 Glades Rd, Boca Raton, FL',lat:26.3843,lng:-80.1765},
+  {name:'Tunde Cano',address:'12361 Hagen Ranch Rd, Boynton Beach, FL',lat:26.5198,lng:-80.1265},
+  {name:'Daniel Perez',address:'1201 6th Ave W, Bradenton, FL',lat:27.4987,lng:-82.5787},
+  {name:'Amir Farzan',address:'1444 S Belcher Rd, Clearwater, FL',lat:27.9543,lng:-82.7543},
+  {name:'Kevin Dubois',address:'1222 Dixon Blvd, Cocoa, FL',lat:28.3565,lng:-80.7432},
+];
+
+function initMap(){
+  if(mapInstance){mapInstance.invalidateSize();updateMapStats();return;}
+  
+  // Load Leaflet JS dynamically
+  if(!window.L){
+    const script=document.createElement('script');
+    script.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    script.onload=()=>buildMap();
+    document.head.appendChild(script);
+  } else {
+    buildMap();
+  }
+}
+
+function buildMap(){
+  mapInstance=L.map('shiptrack-map').setView([38.5,(-79.5)],6);
+  
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    attribution:'© OpenStreetMap contributors',
+    maxZoom:19
+  }).addTo(mapInstance);
+
+  // Warehouse pin (gold star)
+  const warehouseIcon=L.divIcon({
+    html:`<div style="background:#B8974A;width:18px;height:18px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center">
+      <svg viewBox="0 0 12 12" width="10" height="10" fill="white"><polygon points="6,1 7.5,4.5 11,5 8.5,7.5 9,11 6,9 3,11 3.5,7.5 1,5 4.5,4.5"/></svg>
+    </div>`,
+    className:'',iconSize:[18,18],iconAnchor:[9,9]
+  });
+  
+  L.marker([WAREHOUSE.lat,WAREHOUSE.lng],{icon:warehouseIcon})
+   .addTo(mapInstance)
+   .bindPopup(`<div style="font-family:system-ui;min-width:200px">
+     <div style="font-weight:600;font-size:14px;color:#B8974A;margin-bottom:4px">⭐ NELK Warehouse</div>
+     <div style="font-size:12px;color:#555">${WAREHOUSE.address}</div>
+   </div>`);
+
+  // Mailbox pins (blue)
+  const mbIcon=L.divIcon({
+    html:`<div style="background:#6A8FAF;width:12px;height:12px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.3)"></div>`,
+    className:'',iconSize:[12,12],iconAnchor:[6,6]
+  });
+
+  MAILBOX_LOCATIONS.forEach(mb=>{
+    // Count active shipments for this mailbox
+    const count=shipments.filter(s=>{
+      const cn=(s.customer_name||'').toLowerCase().trim();
+      const mbName=mb.name.toLowerCase().trim();
+      return cn===mbName||cn.includes(mbName.split(' ')[0].toLowerCase());
+    }).length;
+
+    L.marker([mb.lat,mb.lng],{icon:mbIcon})
+     .addTo(mapInstance)
+     .bindPopup(`<div style="font-family:system-ui;min-width:180px">
+       <div style="font-weight:600;font-size:13px;margin-bottom:3px">${mb.name}</div>
+       <div style="font-size:11px;color:#777;margin-bottom:4px">${mb.address}</div>
+       ${count>0?`<div style="font-size:11px;color:#2A6535;background:#EFF6EE;padding:3px 8px;border-radius:4px;display:inline-block">${count} active shipment${count!==1?'s':''}</div>`:'<div style="font-size:11px;color:#999">No active shipments</div>'}
+     </div>`);
+  });
+
+  updateMapStats();
+}
+
+function updateMapStats(){
+  const states=new Set(MAILBOX_LOCATIONS.map(m=>m.address.split(', ').slice(-1)[0].split(' ')[0]));
+  document.getElementById('map-stat-mailboxes').textContent=MAILBOX_LOCATIONS.length;
+  document.getElementById('map-stat-states').textContent=states.size;
+  document.getElementById('map-stat-active').textContent=shipments.filter(s=>!['Delivered','Returned'].includes(s.status)).length;
+}
+
+// ─── RECEIPTS ─────────────────────────────────────────────────────────────────
+let receipts=[],receiptPeriod='all';
+
+async function loadReceipts(){
+  try{
+    const res=await fetch(`${SUPABASE_URL}/rest/v1/receipts?select=*&order=date_paid.desc&limit=1000`,{
+      headers:{'apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`}
+    });
+    if(!res.ok)throw new Error('Failed');
+    receipts=await res.json();
+    document.getElementById('nav-receipts-count').textContent=receipts.length;
+    renderReceipts();
+  }catch(e){console.error('Receipts load error:',e);}
+}
+
+function setReceiptPeriod(el,period){
+  receiptPeriod=period;
+  document.querySelectorAll('#r-period-tabs .filter-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  const customDates=document.getElementById('r-custom-dates');
+  customDates.style.display=period==='custom'?'flex':'none';
+  renderReceipts();
+}
+
+function getReceiptDateFilter(){
+  const now=new Date();
+  if(receiptPeriod==='month'){
+    const start=new Date(now.getFullYear(),now.getMonth(),1).toISOString().split('T')[0];
+    const end=new Date(now.getFullYear(),now.getMonth()+1,0).toISOString().split('T')[0];
+    return{start,end};
+  }
+  if(receiptPeriod==='year'){
+    return{start:`${now.getFullYear()}-01-01`,end:`${now.getFullYear()}-12-31`};
+  }
+  if(receiptPeriod==='custom'){
+    const start=document.getElementById('r-date-from')?.value||'';
+    const end=document.getElementById('r-date-to')?.value||'';
+    return{start,end};
+  }
+  return{start:'',end:''};
+}
+
+function renderReceipts(){
+  const q=(document.getElementById('r-search')?.value||'').toLowerCase();
+  const{start,end}=getReceiptDateFilter();
+
+  const filtered=receipts.filter(r=>{
+    if(start&&r.date_paid<start)return false;
+    if(end&&r.date_paid>end)return false;
+    if(q&&!([r.receipt_number,r.description,r.payment_method,r.rnt_user_id].join(' ').toLowerCase().includes(q)))return false;
+    return true;
+  });
+
+  // Update summary cards
+  const total=filtered.reduce((s,r)=>s+(parseFloat(r.amount)||0),0);
+  document.getElementById('r-total').textContent='$'+total.toFixed(2);
+  document.getElementById('r-count').textContent=filtered.length;
+
+  const now=new Date();
+  const thisMonthStart=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
+  const thisMonthEnd=new Date(now.getFullYear(),now.getMonth()+1,0).toISOString().split('T')[0];
+  const monthTotal=receipts.filter(r=>r.date_paid>=thisMonthStart&&r.date_paid<=thisMonthEnd).reduce((s,r)=>s+(parseFloat(r.amount)||0),0);
+  document.getElementById('r-month').textContent='$'+monthTotal.toFixed(2);
+  document.getElementById('r-month-label').textContent=now.toLocaleString('default',{month:'long'});
+
+  const yearTotal=receipts.filter(r=>r.date_paid&&r.date_paid.startsWith(String(now.getFullYear()))).reduce((s,r)=>s+(parseFloat(r.amount)||0),0);
+  document.getElementById('r-year').textContent='$'+yearTotal.toFixed(2);
+
+  const periodLabels={all:'all time',month:'this month',year:'this year',custom:'custom range'};
+  document.getElementById('r-period-label').textContent=periodLabels[receiptPeriod]||'';
+
+  // Render table
+  const tbody=document.getElementById('receipts-tbody');
+  const empty=document.getElementById('receipts-empty');
+  empty.style.display=filtered.length?'none':'block';
+  tbody.innerHTML=filtered.map(r=>`<tr>
+    <td style="font-family:'Courier New',monospace;font-size:11px;color:var(--stone)">#${r.receipt_number||'--'}</td>
+    <td class="td-muted">${r.date_paid?new Date(r.date_paid+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'--'}</td>
+    <td style="font-size:13px;color:var(--ink);max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.description||'--'}</td>
+    <td class="td-muted">${r.payment_method||'--'}</td>
+    <td class="td-muted">${r.rnt_user_id?'#'+r.rnt_user_id:'--'}</td>
+    <td style="font-size:13px;font-weight:500;color:var(--charcoal)">$${parseFloat(r.amount||0).toFixed(2)}</td>
+    <td><button style="background:none;border:none;cursor:pointer;color:var(--stone-lt);padding:4px 8px;border-radius:6px;font-size:12px" onclick="deleteReceipt('${r.id}')">&#x2715;</button></td>
+  </tr>`).join('');
+}
+
+async function deleteReceipt(id){
+  if(!confirm('Remove this receipt?'))return;
+  try{
+    const res=await fetch(`${SUPABASE_URL}/rest/v1/receipts?id=eq.${id}`,{
+      method:'DELETE',
+      headers:{'apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`}
+    });
+    if(!res.ok){toast('Delete failed','default');return;}
+    receipts=receipts.filter(r=>r.id!==id);
+    renderReceipts();
+    toast('Receipt removed.','default');
+  }catch(e){toast('Network error: '+e.message,'default');}
+}
+
+function exportReceiptsCSV(){
+  const{start,end}=getReceiptDateFilter();
+  const filtered=receipts.filter(r=>{
+    if(start&&r.date_paid<start)return false;
+    if(end&&r.date_paid>end)return false;
+    return true;
+  });
+  const headers=['receipt_number','date_paid','description','payment_method','rnt_user_id','amount'];
+  const rows=filtered.map(r=>headers.map(h=>`"${(r[h]||'').toString().replace(/"/g,'""')}"`).join(','));
+  const csv=[headers.join(','),...rows].join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download=`receipts-export-${today}.csv`;
+  a.click();
+}
+
+// ─── FBA INVENTORY PAGE ───────────────────────────────────────────────────────
+async function loadFBAInventoryPage(){
+  const res=await fetch(`${SUPABASE_URL}/rest/v1/inventory_fba?select=*&order=product_name.asc`,{headers:{'apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`}});
+  if(res.ok)fbaInventory=await res.json();
+  renderFBAInventoryPage();
+}
+
+async function refreshFBAInventoryPage(){
+  document.getElementById('fba-inv-tbody').innerHTML='<tr><td colspan="3" style="text-align:center;color:var(--stone);padding:24px">Loading...</td></tr>';
+  await loadFBAInventoryPage();
+}
+
+function renderFBAInventoryPage(){
+  const items=fbaInventory.slice().sort((a,b)=>(a.product_name||'').localeCompare(b.product_name||''));
+  const totalSKUs=items.length;
+  const totalUnits=items.reduce((s,i)=>s+(i.quantity||0),0);
+  const inStock=items.filter(i=>(i.quantity||0)>0).length;
+  const outStock=totalSKUs-inStock;
+
+  document.getElementById('fba-inv-total-skus').textContent=totalSKUs;
+  document.getElementById('fba-inv-total-units').textContent=totalUnits;
+  document.getElementById('fba-inv-in-stock').textContent=inStock;
+  document.getElementById('fba-inv-out-stock').textContent=outStock;
+
+  const latest=items.reduce((d,i)=>i.updated_at>d?i.updated_at:d,'');
+  if(latest){const dt=new Date(latest);document.getElementById('fba-inv-updated').textContent='Last updated '+dt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}
+
+  const rows=items.map(i=>{
+    const qty=i.quantity||0;
+    const inStockItem=qty>0;
+    const rowBg=inStockItem?'rgba(42,101,53,0.07)':'rgba(180,75,60,0.07)';
+    const badge=inStockItem
+      ?'<span style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:99px;background:rgba(42,101,53,.12);color:#2A6535;font-size:11px;font-weight:500">In Stock</span>'
+      :'<span style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:99px;background:rgba(180,75,60,.12);color:#B44B3C;font-size:11px;font-weight:500">Out of Stock</span>';
+    return`<tr style="background:${rowBg}">
+      <td class="td-name">${i.product_name||'—'}</td>
+      <td style="font-size:13px;font-weight:600">${qty}</td>
+      <td>${badge}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('fba-inv-tbody').innerHTML=rows||'<tr><td colspan="3" style="text-align:center;color:var(--stone);padding:24px">No inventory data</td></tr>';
+}
+
+function updateFBARow(input){
+  const productName=input.getAttribute('data-product');
+  const qty=parseInt(input.value)||0;
+  const prod=products.find(p=>p.name===productName);
+  const proceeds=(prod?.proceeds||0)*qty;
+  const key=productName.replace(/[^a-zA-Z0-9]/g,'_');
+  const el=document.getElementById('fba-proceeds-'+key);
+  if(el)el.textContent='$'+proceeds.toFixed(2);
+
+  // Recalculate totals
+  let totalUnits=0,totalProceeds=0;
+  document.querySelectorAll('#fba-inv-tbody input[data-product]').forEach(inp=>{
+    const pName=inp.getAttribute('data-product');
+    const q=parseInt(inp.value)||0;
+    const p=products.find(pr=>pr.name===pName);
+    totalUnits+=q;
+    totalProceeds+=(p?.proceeds||0)*q;
+  });
+  document.getElementById('fba-inv-total-units').textContent=totalUnits;
+  document.getElementById('fba-inv-total-proceeds').textContent='$'+totalProceeds.toFixed(2);
+}
+
+async function saveFBAInventory(){
+  const msg=document.getElementById('fba-inv-msg');
+  const showMsg=(text,type)=>{msg.textContent=text;msg.className=`form-msg ${type}`;msg.style.display='block';setTimeout(()=>msg.style.display='none',4000);};
+  const inputs=document.querySelectorAll('#fba-inv-tbody input[data-product]');
+  let saved=0,errors=0;
+
+  for(const input of inputs){
+    const productName=input.getAttribute('data-product');
+    const qty=parseInt(input.value)||0;
+    try{
+      const existing=fbaInventory.find(f=>f.product_name===productName);
+      if(existing){
+        await fetch(`${SUPABASE_URL}/rest/v1/inventory_fba?id=eq.${existing.id}`,{
+          method:'PATCH',
+          headers:{'apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`,'Content-Type':'application/json','Prefer':'return=minimal'},
+          body:JSON.stringify({quantity:qty,updated_at:new Date().toISOString()})
+        });
+      }else if(qty>0){
+        const prod=products.find(p=>p.name===productName);
+        await fetch(`${SUPABASE_URL}/rest/v1/inventory_fba`,{
+          method:'POST',
+          headers:{'apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`,'Content-Type':'application/json','Prefer':'return=minimal'},
+          body:JSON.stringify({product_name:productName,product_id:prod?.id||null,quantity:qty,updated_at:new Date().toISOString()})
+        });
+      }
+      saved++;
+    }catch(e){errors++;}
+  }
+
+  if(errors>0){showMsg(`Saved with ${errors} errors.`,'warn');}
+  else{showMsg('FBA inventory saved successfully!','success');}
+
+  // Reload FBA inventory data
+  const res=await fetch(`${SUPABASE_URL}/rest/v1/inventory_fba?select=*`,{headers:{'apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`}});
+  fbaInventory=await res.json();
+
+  // Update nav badge
+  const totalUnits=fbaInventory.reduce((s,i)=>s+(i.quantity||0),0);
+  const totalReceiving=receivingInventory.reduce((s,i)=>s+(i.quantity||0),0);
+  document.getElementById('nav-inv-count').textContent=totalUnits+totalReceiving;
+
+  toast(`FBA inventory updated — ${saved} products saved.`,'success');
+}
+
+
+let products=[],receivingInventory=[],fbaInventory=[],fbaShipmentsList=[];
+let editingProductId=null,fbaItemCount=0;
+
+async function loadCatalog(){
+  try{
+    const res=await fetch(`${SUPABASE_URL}/rest/v1/products?select=*&order=name.asc`,{headers:{'apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`}});
+    products=await res.json();
+    renderCatalog();
+  }catch(e){console.error('Catalog load error:',e);}
+}
+
+function renderCatalog(){
+  document.getElementById('catalog-tbody').innerHTML=products.map(p=>`<tr>
+    <td class="td-name">${p.name}</td>
+    <td style="font-size:13px;color:var(--charcoal)">$${parseFloat(p.proceeds||0).toFixed(2)}</td>
+    <td><span class="badge ${p.active?'badge-delivered':'badge-returned'}">${p.active?'Active':'Inactive'}</span></td>
+    <td><div class="td-actions">
+      <button class="btn-refresh-row" onclick="openEditProduct('${p.id}')" title="Edit"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 3l3 3-10 10H4v-3L14 3z"/></svg></button>
+      <button style="background:none;border:none;cursor:pointer;color:var(--stone-lt);padding:4px 8px;border-radius:6px;font-size:12px" onclick="deleteProduct('${p.id}')">&#x2715;</button>
+    </div></td>
+  </tr>`).join('');
+}
+
+function openAddProduct(){
+  editingProductId=null;
+  document.getElementById('product-modal-title').textContent='Add Product';
+  document.getElementById('prod-name').value='';
+  document.getElementById('prod-proceeds').value='';
+  document.getElementById('prod-active').value='true';
+  document.getElementById('product-modal').style.display='flex';
+}
+
+function openEditProduct(id){
+  const p=products.find(p=>p.id===id);if(!p)return;
+  editingProductId=id;
+  document.getElementById('product-modal-title').textContent='Edit Product';
+  document.getElementById('prod-name').value=p.name||'';
+  document.getElementById('prod-proceeds').value=p.proceeds||'';
+  document.getElementById('prod-active').value=p.active?'true':'false';
+  document.getElementById('product-modal').style.display='flex';
+}
+
+async function saveProduct(){
+  const msg=document.getElementById('prod-msg');
+  const showMsg=(text,type)=>{msg.textContent=text;msg.className=`form-msg ${type}`;msg.style.display='block';setTimeout(()=>msg.style.display='none',4000);};
+  const name=document.getElementById('prod-name').value.trim();
+  if(!name)return showMsg('Product name is required.','error');
+  const record={name,proceeds:parseFloat(document.getElementById('prod-proceeds').value)||0,active:document.getElementById('prod-active').value==='true',updated_at:new Date().toISOString()};
+  try{
+    let res;
+    if(editingProductId){
+      res=await fetch(`${SUPABASE_URL}/rest/v1/products?id=eq.${editingProductId}`,{method:'PATCH',headers:{'apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(record)});
+    }else{
+      res=await fetch(`${SUPABASE_URL}/rest/v1/products`,{method:'POST',headers:{'apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(record)});
+    }
+    if(!res.ok){const err=await res.text();return showMsg('Save failed: '+err.slice(0,80),'error');}
+    showMsg('Saved!','success');
+    setTimeout(async()=>{document.getElementById('product-modal').style.display='none';await loadCatalog();},800);
+  }catch(e){showMsg('Network error: '+e.message,'error');}
+}
+
+async function deleteProduct(id){
+  if(!confirm('Remove this product?'))return;
+  try{
+    await fetch(`${SUPABASE_URL}/rest/v1/products?id=eq.${id}`,{method:'DELETE',headers:{'apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`}});
+    await loadCatalog();toast('Product removed.','default');
+  }catch(e){toast('Error: '+e.message,'default');}
+}
+
+let invPeriod='all';
+let inventoryOrders=[];
+
+function setInvPeriod(el,period){
+  invPeriod=period;
+  document.querySelectorAll('#inv-period-tabs .filter-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  const customDates=document.getElementById('inv-custom-dates');
+  customDates.style.display=period==='custom'?'flex':'none';
+  renderInventory();
+}
+
+function getInvDateRange(){
+  const now=new Date();
+  const todayStr=now.toISOString().split('T')[0];
+  if(invPeriod==='today') return{start:todayStr,end:todayStr};
+  if(invPeriod==='week'){
+    const day=now.getDay();
+    const startOfWeek=new Date(now);
+    startOfWeek.setDate(now.getDate()-day);
+    return{start:startOfWeek.toISOString().split('T')[0],end:todayStr};
+  }
+  if(invPeriod==='month') return{start:`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`,end:todayStr};
+  if(invPeriod==='year') return{start:`${now.getFullYear()}-01-01`,end:todayStr};
+  if(invPeriod==='custom') return{start:document.getElementById('inv-date-from')?.value||'',end:document.getElementById('inv-date-to')?.value||''};
+  return{start:'',end:''};
+}
+
+function renderInventory(){
+  const{start,end}=getInvDateRange();
+
+  // For filtered periods, sum from order items by date
+  let filteredItems={};
+  if(invPeriod==='all'){
+    // Use running totals from inventory_receiving
+    receivingInventory.forEach(item=>{
+      filteredItems[item.product_name]={qty:item.quantity,cost:item.total_cost||0};
+    });
+  } else {
+    // Sum from individual orders within date range
+    inventoryOrders.forEach(order=>{
+      const d=order.order_date||'';
+      if(start&&d<start) return;
+      if(end&&d>end) return;
+      (order.items||[]).forEach(item=>{
+        if(!filteredItems[item.product_name]) filteredItems[item.product_name]={qty:0,cost:0};
+        filteredItems[item.product_name].qty+=item.quantity||0;
+        filteredItems[item.product_name].cost+=parseFloat(item.cost)||0;
+      });
+    });
+  }
+
+  const totalRec=Object.values(filteredItems).reduce((s,i)=>s+(i.qty||0),0);
+  const totalFba=fbaInventory.reduce((s,i)=>s+(i.quantity||0),0);
+  document.getElementById('inv-total-receiving').textContent=totalRec;
+  document.getElementById('inv-total-fba').textContent=totalFba;
+  document.getElementById('nav-inv-count').textContent=totalRec+totalFba;
+
+  let totalProceeds=0,totalCost=0;
+  Object.entries(filteredItems).forEach(([name,data])=>{
+    const prod=products.find(p=>p.name===name);
+    totalProceeds+=(prod?.proceeds||0)*(data.qty||0);
+    totalCost+=data.cost||0;
+  });
+
+  // Add FBA proceeds to total
+  const fbaProceeds=fbaInventory.reduce((s,item)=>{
+    const prod=products.find(p=>p.name===item.product_name);
+    return s+(prod?.proceeds||0)*(item.quantity||0);
+  },0);
+
+  document.getElementById('inv-total-proceeds').textContent='$'+(totalProceeds+fbaProceeds).toFixed(2);
+  document.getElementById('inv-total-cost').textContent='$'+totalCost.toFixed(2);
+
+  // Receiving table
+  const recEmpty=document.getElementById('inv-receiving-empty');
+  const recTbody=document.getElementById('inv-receiving-tbody');
+  const recData=Object.entries(filteredItems).filter(([,d])=>d.qty>0);
+  recEmpty.style.display=recData.length?'none':'block';
+  recTbody.innerHTML=recData.map(([name,data])=>{
+    const prod=products.find(p=>p.name===name);
+    const proceeds=(prod?.proceeds||0)*data.qty;
+    const cost=data.cost||0;
+    const margin=cost>0?((proceeds-cost)/cost*100).toFixed(0)+'%':'--';
+    return`<tr>
+      <td class="td-name">${name}</td>
+      <td style="font-size:14px;font-weight:500;color:var(--charcoal)">${data.qty}</td>
+      <td style="font-size:13px;color:var(--stone)">$${cost.toFixed(2)}</td>
+      <td style="font-size:13px;color:#2A6535">$${proceeds.toFixed(2)}</td>
+      <td style="font-size:12px;color:var(--stone-lt)">${margin}</td>
+    </tr>`;
+  }).join('');
+
+  // FBA table
+  const fbaEmpty=document.getElementById('inv-fba-empty');
+  const fbaTbody=document.getElementById('inv-fba-tbody');
+  const fbaData=fbaInventory.filter(i=>i.quantity>0);
+  fbaEmpty.style.display=fbaData.length?'none':'block';
+  fbaTbody.innerHTML=fbaData.map(item=>{
+    const prod=products.find(p=>p.name===item.product_name);
+    const proceeds=(prod?.proceeds||0)*item.quantity;
+    return`<tr>
+      <td class="td-name">${item.product_name}</td>
+      <td style="font-size:14px;font-weight:500;color:var(--charcoal)">${item.quantity}</td>
+      <td style="font-size:13px;color:#2A6535">$${proceeds.toFixed(2)}</td>
+    </tr>`;
+  }).join('');
+}
+
+async function loadInventory(){
+  if(!products.length)await loadCatalog();
+  try{
+    const [recRes,fbaRes,ordersRes]=await Promise.all([
+      fetch(`${SUPABASE_URL}/rest/v1/inventory_receiving?select=*&order=product_name.asc`,{headers:{'apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`}}),
+      fetch(`${SUPABASE_URL}/rest/v1/inventory_fba?select=*&order=product_name.asc`,{headers:{'apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`}}),
+      fetch(`${SUPABASE_URL}/rest/v1/inventory_orders?select=*,inventory_order_items(*)&order=order_date.desc`,{headers:{'apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`}})
+    ]);
+    receivingInventory=await recRes.json();
+    fbaInventory=await fbaRes.json();
+    const ordersRaw=await ordersRes.json();
+    inventoryOrders=ordersRaw.map(o=>({...o,items:o.inventory_order_items||[]}));
+    renderInventory();
+  }catch(e){console.error('Inventory load error:',e);}
+}
+
+async function loadFBAShipments(){
+  try{
+    const res=await fetch(`${SUPABASE_URL}/rest/v1/fba_shipments?select=*,fba_shipment_items(*)&order=shipped_at.desc`,{headers:{'apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`}});
+    fbaShipmentsList=await res.json();
+    renderFBAShipments();
+  }catch(e){console.error('FBA shipments load error:',e);}
+}
+
+function renderFBAShipments(){
+  const empty=document.getElementById('fba-shipments-empty');
+  const tbody=document.getElementById('fba-shipments-tbody');
+  empty.style.display=fbaShipmentsList.length?'none':'block';
+  tbody.innerHTML=fbaShipmentsList.map(s=>{
+    const items=s.fba_shipment_items||[];
+    const totalUnits=items.reduce((sum,i)=>sum+(i.quantity||0),0);
+    return`<tr>
+      <td class="td-name">${s.shipment_name||'--'}</td>
+      <td class="td-muted">${s.shipped_at?new Date(s.shipped_at+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'--'}</td>
+      <td style="font-size:12px;color:var(--stone)">${items.length} product${items.length!==1?'s':''}</td>
+      <td style="font-size:14px;font-weight:500">${totalUnits} units</td>
+      <td class="td-muted">${s.notes||'--'}</td>
+      <td><button style="background:none;border:none;cursor:pointer;color:var(--stone-lt);padding:4px 8px;border-radius:6px;font-size:12px" onclick="deleteFBAShipment('${s.id}')">&#x2715;</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function openNewFBAShipment(){
+  if(!products.length){loadCatalog().then(()=>openNewFBAShipment());return;}
+  document.getElementById('fba-name').value='FBA Shipment '+new Date().toLocaleDateString('en-US',{month:'long',year:'numeric'});
+  document.getElementById('fba-date').value=new Date().toISOString().split('T')[0];
+  document.getElementById('fba-notes').value='';
+  document.getElementById('fba-items-list').innerHTML='';
+  fbaItemCount=0;
+  addFBAItem();
+  document.getElementById('fba-modal').style.display='flex';
+}
+
+function addFBAItem(){
+  fbaItemCount++;
+  const id='fba-item-'+fbaItemCount;
+  const opts=products.filter(p=>p.active).map(p=>`<option value="${p.name}">${p.name}</option>`).join('');
+  const div=document.createElement('div');
+  div.id=id;
+  div.style.cssText='display:flex;gap:10px;align-items:center';
+  div.innerHTML=`<select class="form-control form-select" style="flex:1;padding:9px 14px;font-size:12px"><option value="">Select product...</option>${opts}</select>
+    <input class="form-control" type="number" min="1" value="1" style="width:80px;padding:9px 12px;font-size:12px" placeholder="Qty">
+    <button onclick="document.getElementById('${id}').remove()" style="background:none;border:none;cursor:pointer;color:var(--stone-lt);font-size:16px;padding:0 4px">&#x2715;</button>`;
+  document.getElementById('fba-items-list').appendChild(div);
+}
+
+async function saveFBAShipment(){
+  const msg=document.getElementById('fba-msg');
+  const showMsg=(text,type)=>{msg.textContent=text;msg.className=`form-msg ${type}`;msg.style.display='block';setTimeout(()=>msg.style.display='none',4000);};
+  const name=document.getElementById('fba-name').value.trim();
+  if(!name)return showMsg('Shipment name is required.','error');
+
+  // Collect items
+  const itemDivs=document.getElementById('fba-items-list').children;
+  const items=[];
+  for(const div of itemDivs){
+    const sel=div.querySelector('select');
+    const inp=div.querySelector('input');
+    if(sel?.value&&inp?.value){
+      items.push({product_name:sel.value,quantity:parseInt(inp.value)||0});
+    }
+  }
+  if(!items.length)return showMsg('Add at least one product.','error');
+
+  try{
+    // Create shipment
+    const shipRes=await fetch(`${SUPABASE_URL}/rest/v1/fba_shipments`,{method:'POST',headers:{'apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`,'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify({shipment_name:name,shipped_at:document.getElementById('fba-date').value,notes:document.getElementById('fba-notes').value.trim()})});
+    if(!shipRes.ok){const err=await shipRes.text();return showMsg('Failed: '+err.slice(0,80),'error');}
+    const[shipment]=await shipRes.json();
+
+    // Add items
+    const itemRecords=items.map(i=>({shipment_id:shipment.id,product_name:i.product_name,quantity:i.quantity}));
+    await fetch(`${SUPABASE_URL}/rest/v1/fba_shipment_items`,{method:'POST',headers:{'apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify(itemRecords)});
+
+    // Update FBA inventory (add units)
+    for(const item of items){
+      const existing=fbaInventory.find(i=>i.product_name===item.product_name);
+      if(existing){
+        await fetch(`${SUPABASE_URL}/rest/v1/inventory_fba?id=eq.${existing.id}`,{method:'PATCH',headers:{'apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({quantity:existing.quantity+item.quantity,updated_at:new Date().toISOString()})});
+      }else{
+        await fetch(`${SUPABASE_URL}/rest/v1/inventory_fba`,{method:'POST',headers:{'apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({product_name:item.product_name,quantity:item.quantity,updated_at:new Date().toISOString()})});
+      }
+      // Deduct from receiving inventory
+      const rec=receivingInventory.find(i=>i.product_name===item.product_name);
+      if(rec&&rec.quantity>0){
+        const newQty=Math.max(0,rec.quantity-item.quantity);
+        await fetch(`${SUPABASE_URL}/rest/v1/inventory_receiving?id=eq.${rec.id}`,{method:'PATCH',headers:{'apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({quantity:newQty,updated_at:new Date().toISOString()})});
+      }
+    }
+
+    showMsg('Shipment created!','success');
+    setTimeout(async()=>{document.getElementById('fba-modal').style.display='none';await loadInventory();await loadFBAShipments();nav('fbashipments');},1000);
+  }catch(e){showMsg('Error: '+e.message,'error');}
+}
+
+async function deleteFBAShipment(id){
+  if(!confirm('Delete this shipment? This will NOT restore receiving inventory.'))return;
+  try{
+    await fetch(`${SUPABASE_URL}/rest/v1/fba_shipment_items?shipment_id=eq.${id}`,{method:'DELETE',headers:{'apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`}});
+    await fetch(`${SUPABASE_URL}/rest/v1/fba_shipments?id=eq.${id}`,{method:'DELETE',headers:{'apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`}});
+    await loadFBAShipments();toast('Shipment deleted.','default');
+  }catch(e){toast('Error: '+e.message,'default');}
+}
+
+// ─── DARK MODE ────────────────────────────────────────────────────────────────
+function toggleDarkMode(){
+  const isDark=document.body.classList.toggle('dark');
+  localStorage.setItem('shiptrack_darkmode', isDark?'1':'0');
+  updateDarkIcons(isDark);
+}
+
+function updateDarkIcons(isDark){
+  document.getElementById('dark-icon-moon').style.display=isDark?'none':'block';
+  document.getElementById('dark-icon-sun').style.display=isDark?'block':'none';
+}
+
+function initDarkMode(){
+  const saved=localStorage.getItem('shiptrack_darkmode');
+  const prefersDark=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const isDark=saved==='1'||(saved===null&&prefersDark);
+  if(isDark)document.body.classList.add('dark');
+  updateDarkIcons(isDark);
+}
+
+initDarkMode();
+loadSettings();
+updateApiStatus();
+loadFromSupabase();
+loadMailboxes();
+</script>
+</body>
+</html>

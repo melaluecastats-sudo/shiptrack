@@ -760,55 +760,46 @@ body.dark #shiptrack-map{filter:invert(0.9) hue-rotate(180deg)}
     <span class="v4-sync-ts" id="v4-last-sync" style="margin-left:auto">V4 Last Sync: &#x2014;</span>
   </div>
 
-  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px">
-    <div class="stat-card gold"><div class="stat-label">Total Receiving</div><div class="stat-value" id="inv-total-receiving">--</div><div class="stat-sub">units at warehouse</div></div>
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:28px">
     <div class="stat-card blue"><div class="stat-label">Total FBA</div><div class="stat-value" id="inv-total-fba">--</div><div class="stat-sub">units at Amazon</div></div>
-    <div class="stat-card sage"><div class="stat-label">Est. Proceeds</div><div class="stat-value" id="inv-total-proceeds">--</div><div class="stat-sub">receiving + FBA</div></div>
-    <div class="stat-card amber"><div class="stat-label">Est. Cost</div><div class="stat-value" id="inv-total-cost">--</div><div class="stat-sub">receiving inventory</div></div>
+    <div class="stat-card sage"><div class="stat-label">Est. FBA Proceeds</div><div class="stat-value" id="inv-total-proceeds">--</div><div class="stat-sub">at Amazon</div></div>
   </div>
-  <div class="toolbar" style="margin-bottom:20px">
-    <div class="filter-tabs" id="inv-period-tabs">
-      <div class="filter-tab active" onclick="setInvPeriod(this,'all')">All Time</div>
-      <div class="filter-tab" onclick="setInvPeriod(this,'today')">Today</div>
-      <div class="filter-tab" onclick="setInvPeriod(this,'week')">This Week</div>
-      <div class="filter-tab" onclick="setInvPeriod(this,'month')">This Month</div>
-      <div class="filter-tab" onclick="setInvPeriod(this,'year')">This Year</div>
-      <div class="filter-tab" onclick="setInvPeriod(this,'custom')">Custom</div>
+
+  <!-- Pipeline Inventory — full width, product breakdown by stage -->
+  <div class="card" style="margin-bottom:20px">
+    <div class="card-header"><div class="card-title">Pipeline Inventory</div><div class="card-meta" id="pipeline-last-updated">By product &mdash; active stages only</div></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Product</th>
+          <th style="text-align:right">&#x1F4E6; Purchased</th>
+          <th style="text-align:right">&#x1F4EC; At Mailbox</th>
+          <th style="text-align:right">&#x1F69A; In Transit</th>
+          <th style="text-align:right">&#x1F3ED; At Warehouse</th>
+          <th style="text-align:right">Total</th>
+        </tr></thead>
+        <tbody id="inv-pipeline-tbody"></tbody>
+      </table>
     </div>
-    <div id="inv-custom-dates" style="display:none;gap:8px;align-items:center">
-      <input class="form-control" type="date" id="inv-date-from" style="padding:8px 12px;font-size:12px" onchange="renderInventory()">
-      <span style="font-size:12px;color:var(--stone-lt)">to</span>
-      <input class="form-control" type="date" id="inv-date-to" style="padding:8px 12px;font-size:12px" onchange="renderInventory()">
+    <div class="empty-state" id="inv-pipeline-empty" style="display:none">
+      <div class="empty-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 7l8-4 8 4v6l-8 4-8-4V7z"/></svg></div>
+      <div class="empty-title">No inventory data</div>
+      <div class="empty-sub">Orders will appear once Gmail syncs Melaleuca confirmations.</div>
     </div>
   </div>
-  <div class="dash-grid">
-    <div class="card">
-      <div class="card-header"><div class="card-title">Receiving Inventory</div><div class="card-meta">At your warehouse</div></div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Product</th><th>Units</th><th>Est. Cost</th><th>Est. Proceeds</th><th>Margin</th></tr></thead>
-          <tbody id="inv-receiving-tbody"></tbody>
-        </table>
-      </div>
-      <div class="empty-state" id="inv-receiving-empty" style="display:none">
-        <div class="empty-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 7l8-4 8 4v6l-8 4-8-4V7z"/></svg></div>
-        <div class="empty-title">No receiving inventory</div>
-        <div class="empty-sub">Units will appear once Gmail syncs your order confirmations.</div>
-      </div>
+  <!-- FBA Inventory -->
+  <div class="card">
+    <div class="card-header"><div class="card-title">FBA Inventory</div><div class="card-meta">At Amazon</div></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Product</th><th>Units</th><th>Est. Proceeds</th></tr></thead>
+        <tbody id="inv-fba-tbody"></tbody>
+      </table>
     </div>
-    <div class="card">
-      <div class="card-header"><div class="card-title">FBA Inventory</div><div class="card-meta">At Amazon</div></div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Product</th><th>Units</th><th>Est. Proceeds</th></tr></thead>
-          <tbody id="inv-fba-tbody"></tbody>
-        </table>
-      </div>
-      <div class="empty-state" id="inv-fba-empty" style="display:none">
-        <div class="empty-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 7h14M3 7l2-4h10l2 4M3 7v9a1 1 0 001 1h12a1 1 0 001-1V7"/></svg></div>
-        <div class="empty-title">No FBA inventory</div>
-        <div class="empty-sub">Create an FBA shipment to move units from receiving.</div>
-      </div>
+    <div class="empty-state" id="inv-fba-empty" style="display:none">
+      <div class="empty-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 7h14M3 7l2-4h10l2 4M3 7v9a1 1 0 001 1h12a1 1 0 001-1V7"/></svg></div>
+      <div class="empty-title">No FBA inventory</div>
+      <div class="empty-sub">Create an FBA shipment to move units from receiving.</div>
     </div>
   </div>
 </div>
@@ -1275,7 +1266,7 @@ const TITLE_MAP={dashboard:'Dashboard',all:'All Shipments',inbound:'Inbound Pack
 const NAV_IDX={dashboard:0,all:1,inbound:2,outbound:3,add:4,bulk:5,alerts:6,map:7,mailboxes:8,inventory:9,fbainventory:10,catalog:11,fbashipments:12,receipts:13,import:14,integrations:15,settings:16};
 
 function nav(page){document.querySelectorAll('.page-view').forEach(v=>v.classList.remove('active'));document.querySelectorAll('.nav-item').forEach(v=>v.classList.remove('active'));const view=document.getElementById(PAGE_MAP[page]);if(view)view.classList.add('active');const items=document.querySelectorAll('.nav-item');if(items[NAV_IDX[page]])items[NAV_IDX[page]].classList.add('active');document.getElementById('topbar-title').textContent=TITLE_MAP[page]||page;if(page==='all')renderMainTable();if(page==='inbound')renderDirTable('in');if(page==='outbound')renderDirTable('out');if(page==='alerts')renderAlerts();if(page==='dashboard')renderDashboard();if(page==='integrations'){updateSyncUI();updateApiStatus();}if(page==='fbainventory')loadFBAInventoryPage();
-if(page==='inventory'){loadInventory();loadV4Stages();}
+if(page==='inventory'){loadInventory();loadV4Stages();loadPipelineTable();}
 if(page==='catalog')loadCatalog();
 if(page==='fbashipments')loadFBAShipments();
 if(page==='receipts')loadReceipts();
@@ -1956,8 +1947,7 @@ async function saveFBAInventory(){
 
   // Update nav badge
   const totalUnits=fbaInventory.reduce((s,i)=>s+(i.quantity||0),0);
-  const totalReceiving=receivingInventory.reduce((s,i)=>s+(i.quantity||0),0);
-  document.getElementById('nav-inv-count').textContent=totalUnits+totalReceiving;
+  document.getElementById('nav-inv-count').textContent=totalUnits;
 
   toast(`FBA inventory updated — ${saved} products saved.`,'success');
 }
@@ -2062,71 +2052,15 @@ function getInvDateRange(){
 }
 
 function renderInventory(){
-  const{start,end}=getInvDateRange();
-
-  // For filtered periods, sum from order items by date
-  let filteredItems={};
-  if(invPeriod==='all'){
-    // Use running totals from inventory_receiving
-    receivingInventory.forEach(item=>{
-      filteredItems[item.product_name]={qty:item.quantity,cost:item.total_cost||0};
-    });
-  } else {
-    // Sum from individual orders within date range
-    inventoryOrders.forEach(order=>{
-      const d=order.order_date||'';
-      if(start&&d<start) return;
-      if(end&&d>end) return;
-      (order.items||[]).forEach(item=>{
-        if(!filteredItems[item.product_name]) filteredItems[item.product_name]={qty:0,cost:0};
-        filteredItems[item.product_name].qty+=item.quantity||0;
-        filteredItems[item.product_name].cost+=parseFloat(item.cost)||0;
-      });
-    });
-  }
-
-  const totalRec=Object.values(filteredItems).reduce((s,i)=>s+(i.qty||0),0);
   const totalFba=fbaInventory.reduce((s,i)=>s+(i.quantity||0),0);
-  document.getElementById('inv-total-receiving').textContent=totalRec;
-  document.getElementById('inv-total-fba').textContent=totalFba;
-  document.getElementById('nav-inv-count').textContent=totalRec+totalFba;
-
-  let totalProceeds=0,totalCost=0;
-  Object.entries(filteredItems).forEach(([name,data])=>{
-    const prod=products.find(p=>p.name===name);
-    totalProceeds+=(prod?.proceeds||0)*(data.qty||0);
-    totalCost+=data.cost||0;
-  });
-
-  // Add FBA proceeds to total
   const fbaProceeds=fbaInventory.reduce((s,item)=>{
     const prod=products.find(p=>p.name===item.product_name);
     return s+(prod?.proceeds||0)*(item.quantity||0);
   },0);
-
-  document.getElementById('inv-total-proceeds').textContent='$'+(totalProceeds+fbaProceeds).toFixed(2);
-  document.getElementById('inv-total-cost').textContent='$'+totalCost.toFixed(2);
-  window.v4ReceivingCost=totalCost;  var v4ca=document.getElementById('v4-total-cost-all');if(v4ca)v4ca.textContent='$'+(totalCost+(window.v4LineTotalSum||0)).toFixed(2);
-  var v4pa=document.getElementById('v4-total-proceeds-all');if(v4pa)v4pa.textContent='$'+(totalProceeds+fbaProceeds).toFixed(2);
-
-  // Receiving table
-  const recEmpty=document.getElementById('inv-receiving-empty');
-  const recTbody=document.getElementById('inv-receiving-tbody');
-  const recData=Object.entries(filteredItems).filter(([,d])=>d.qty>0);
-  recEmpty.style.display=recData.length?'none':'block';
-  recTbody.innerHTML=recData.map(([name,data])=>{
-    const prod=products.find(p=>p.name===name);
-    const proceeds=(prod?.proceeds||0)*data.qty;
-    const cost=data.cost||0;
-    const margin=cost>0?((proceeds-cost)/cost*100).toFixed(0)+'%':'--';
-    return`<tr>
-      <td class="td-name">${name}</td>
-      <td style="font-size:14px;font-weight:500;color:var(--charcoal)">${data.qty}</td>
-      <td style="font-size:13px;color:var(--stone)">$${cost.toFixed(2)}</td>
-      <td style="font-size:13px;color:#2A6535">$${proceeds.toFixed(2)}</td>
-      <td style="font-size:12px;color:var(--stone-lt)">${margin}</td>
-    </tr>`;
-  }).join('');
+  document.getElementById('inv-total-fba').textContent=totalFba;
+  document.getElementById('nav-inv-count').textContent=totalFba;
+  document.getElementById('inv-total-proceeds').textContent='$'+fbaProceeds.toFixed(2);
+  var v4pa=document.getElementById('v4-total-proceeds-all');if(v4pa)v4pa.textContent='$'+fbaProceeds.toFixed(2);
 
   // FBA table
   const fbaEmpty=document.getElementById('inv-fba-empty');
@@ -2202,17 +2136,65 @@ async function loadV4Stages(){
 async function loadInventory(){
   if(!products.length)await loadCatalog();
   try{
-    const [recRes,fbaRes,ordersRes]=await Promise.all([
-      fetch(`${SUPABASE_URL}/rest/v1/inventory_receiving?select=*&order=product_name.asc`,{headers:{'apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`}}),
-      fetch(`${SUPABASE_URL}/rest/v1/inventory_fba?select=*&order=product_name.asc`,{headers:{'apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`}}),
-      fetch(`${SUPABASE_URL}/rest/v1/inventory_orders?select=*,inventory_order_items(*)&order=order_date.desc`,{headers:{'apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`}})
-    ]);
-    receivingInventory=await recRes.json();
+    const fbaRes=await fetch(`${SUPABASE_URL}/rest/v1/inventory_fba?select=*&order=product_name.asc`,{headers:{'apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`}});
     fbaInventory=await fbaRes.json();
-    const ordersRaw=await ordersRes.json();
-    inventoryOrders=ordersRaw.map(o=>({...o,items:o.inventory_order_items||[]}));
     renderInventory();
   }catch(e){console.error('Inventory load error:',e);}
+}
+
+async function loadPipelineTable(){
+  try{
+    const res=await fetch(SUPABASE_URL+'/rest/v1/inventory_items?select=canonical_name,stage,unit_qty&limit=5000',{
+      headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON}
+    });
+    if(!res.ok)throw new Error('Pipeline fetch failed: '+res.status);
+    const rows=await res.json();
+
+    // Aggregate unit_qty per product per stage (active stages only, exclude sent_to_fba)
+    const activeStages=['purchased','at_mailbox','in_transit','at_warehouse'];
+    const byProduct={};
+    rows.forEach(function(r){
+      var name=r.canonical_name||'Unknown';
+      var s=r.stage||'';
+      if(!activeStages.includes(s)) return;
+      if(!byProduct[name]) byProduct[name]={purchased:0,at_mailbox:0,in_transit:0,at_warehouse:0};
+      byProduct[name][s]+=(r.unit_qty||0);
+    });
+
+    // Sort by at_warehouse desc, then by total desc
+    var table=Object.entries(byProduct).map(function(e){
+      var name=e[0],d=e[1];
+      var total=d.purchased+d.at_mailbox+d.in_transit+d.at_warehouse;
+      return{name,purchased:d.purchased,at_mailbox:d.at_mailbox,in_transit:d.in_transit,at_warehouse:d.at_warehouse,total};
+    }).filter(function(r){return r.total>0;});
+    table.sort(function(a,b){return b.at_warehouse-a.at_warehouse||b.total-a.total;});
+
+    var empty=document.getElementById('inv-pipeline-empty');
+    var tbody=document.getElementById('inv-pipeline-tbody');
+    if(!tbody)return;
+    if(empty) empty.style.display=table.length?'none':'block';
+
+    function numCell(v,highlight){
+      var color=v>0?(highlight?'#B8974A':'var(--charcoal)'):'var(--stone-lt)';
+      var weight=highlight&&v>0?'600':'400';
+      return '<td style="text-align:right;font-size:13px;color:'+color+';font-weight:'+weight+'">'+v+'</td>';
+    }
+    tbody.innerHTML=table.map(function(r){
+      return'<tr>'+
+        '<td class="td-name" style="max-width:280px;font-size:13px">'+r.name+'</td>'+
+        numCell(r.purchased,false)+
+        numCell(r.at_mailbox,false)+
+        numCell(r.in_transit,false)+
+        numCell(r.at_warehouse,true)+
+        '<td style="text-align:right;font-size:14px;font-weight:500;color:var(--charcoal)">'+r.total+'</td>'+
+      '</tr>';
+    }).join('');
+
+    var meta=document.getElementById('pipeline-last-updated');
+    if(meta) meta.textContent=table.length+' products · active stages only';
+  }catch(e){
+    console.error('Pipeline table error:',e);
+  }
 }
 
 async function loadFBAShipments(){

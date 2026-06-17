@@ -2106,7 +2106,7 @@ function renderInventory(){
 
   document.getElementById('inv-total-proceeds').textContent='$'+(totalProceeds+fbaProceeds).toFixed(2);
   document.getElementById('inv-total-cost').textContent='$'+totalCost.toFixed(2);
-  var v4ca=document.getElementById('v4-total-cost-all');if(v4ca)v4ca.textContent='$'+totalCost.toFixed(2);
+  window.v4ReceivingCost=totalCost;  var v4ca=document.getElementById('v4-total-cost-all');if(v4ca)v4ca.textContent='$'+(totalCost+(window.v4LineTotalSum||0)).toFixed(2);
   var v4pa=document.getElementById('v4-total-proceeds-all');if(v4pa)v4pa.textContent='$'+(totalProceeds+fbaProceeds).toFixed(2);
 
   // Receiving table
@@ -2147,30 +2147,49 @@ function renderInventory(){
 
 async function loadV4Stages(){
   try{
-    const res=await fetch(SUPABASE_URL+'/rest/v1/inventory_items?select=stage,quantity,updated_at&order=updated_at.desc&limit=2000',{
+    // Fetch unit_qty (sum per stage), line_total (for cost), updated_at (for last sync)
+    const res=await fetch(SUPABASE_URL+'/rest/v1/inventory_items?select=stage,unit_qty,line_total,updated_at&order=updated_at.desc&limit=5000',{
       headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON}
     });
-    if(!res.ok)throw new Error('V4 fetch failed');
+    if(!res.ok)throw new Error('V4 fetch failed: '+res.status);
     const rows=await res.json();
+
+    // Aggregate unit_qty and line_total per stage
     const stages={purchased:0,at_mailbox:0,in_transit:0,at_warehouse:0,sent_to_fba:0};
+    var v4LineTotal=0;
+    var maxTs=null;
     rows.forEach(function(r){
       var s=r.stage||'';
-      if(stages.hasOwnProperty(s)) stages[s]+=(r.quantity||1);
+      if(stages.hasOwnProperty(s)) stages[s]+=(r.unit_qty||0);
+      v4LineTotal+=parseFloat(r.line_total||0);
+      var ts=r.updated_at||'';
+      if(ts&&(!maxTs||ts>maxTs)) maxTs=ts;
     });
+
+    // Update pills
     Object.entries(stages).forEach(function(e){
       var s=e[0],cnt=e[1];
       var el=document.getElementById('v4-cnt-'+s);
-      if(el) el.textContent=cnt||'0';
+      if(el) el.textContent=cnt;
       var pill=document.getElementById('pill-'+s);
       if(pill) pill.classList.toggle('active',cnt>0);
     });
+
+    // Total Inventory = all stages EXCEPT sent_to_fba
     var inPipeline=stages.purchased+stages.at_mailbox+stages.in_transit+stages.at_warehouse;
     var totalUnits=inPipeline+stages.sent_to_fba;
     var tEl=document.getElementById('v4-total-all');if(tEl)tEl.textContent=inPipeline;
     var tuEl=document.getElementById('v4-total-units');if(tuEl)tuEl.textContent=totalUnits;
+
+    // Total Cost = inventory_items line_total sum + existing receiving cost
+    window.v4LineTotalSum=v4LineTotal;
+    var costEl=document.getElementById('v4-total-cost-all');
+    if(costEl) costEl.textContent='$'+(v4LineTotal+(window.v4ReceivingCost||0)).toFixed(2);
+
+    // Last Sync = MAX(updated_at)
     var tsEl=document.getElementById('v4-last-sync');
-    if(tsEl&&rows.length){
-      var ts=new Date(rows[0].updated_at);
+    if(tsEl&&maxTs){
+      var ts=new Date(maxTs);
       tsEl.textContent='V4 Last Sync: '+ts.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true})+' \u00b7 '+ts.toLocaleDateString('en-US',{month:'short',day:'numeric'});
     }
   }catch(e){

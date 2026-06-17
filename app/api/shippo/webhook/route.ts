@@ -3,29 +3,16 @@ import crypto from 'crypto';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const WEBHOOK_SECRET = process.env.SHIPPO_WEBHOOK_SECRET!;
+const SHEET_ID     = process.env.GOOGLE_SHEET_ID!;
+const API_KEY      = process.env.GOOGLE_SHEETS_API_KEY!;
 
 export async function POST(req: Request) {
   try {
     const body = await req.text();
-
     console.log('Shippo webhook received');
-    console.log('Headers:', JSON.stringify(Object.fromEntries(req.headers.entries())));
-    console.log('Body preview:', body.slice(0, 1500));
-
-    if (WEBHOOK_SECRET) {
-      const signature = req.headers.get('shippo-webhook-signature') ||
-                        req.headers.get('x-shippo-signature') || '';
-      const hmac = crypto.createHmac('sha256', WEBHOOK_SECRET).update(body).digest('hex');
-      const sigClean = signature.replace('sha256=','');
-      if (hmac !== sigClean && hmac !== signature) {
-        console.log('Signature mismatch. Expected:', hmac, 'Got:', signature);
-      }
-    }
+    console.log('Body preview:', body.slice(0, 800));
 
     const event = JSON.parse(body);
-    console.log('Event type:', event.event);
-
     if (!['transaction_created','label_created'].includes(event.event)) {
       return NextResponse.json({ received: true, event: event.event });
     }
@@ -35,13 +22,44 @@ export async function POST(req: Request) {
 
     const tracking_number = txn.tracking_number || txn.tracking_number_provider || '';
     const carrier         = normalizeCarrier(txn.servicelevel?.token || txn.carrier_account || '');
-    const to_name         = txn.shipment?.address_to?.name || txn.address_to?.name || '';
-    const sender_name     = txn.shipment?.address_from?.name || txn.address_from?.name || '';
-    const company         = txn.shipment?.address_from?.company || txn.address_from?.company || '';
     const tracking_url    = txn.tracking_url_provider || txn.tracking_url || '';
 
+    const addrFrom = txn.shipment?.address_from || txn.address_from || {};
+    const addrTo   = txn.shipment?.address_to   || txn.address_to   || {};
+
+    const fromStreet = (addrFrom.street1 || '').toLowerCase().trim();
+    const fromZip    = (addrFrom.zip     || '').trim();
+    const toName     = addrTo.name || addrTo.company || '';
+    const fromName   = addrFrom.name || addrFrom.company || '';
+
+    console.log('From:', fromName, fromStreet, fromZip);
+    console.log('To:', toName);
+
     if (!tracking_number) {
-      return NextResponse.json({ received: true, note: 'no tracking number', txn_status: txn.status });
+      return NextResponse.json({ received: true, note: 'no tracking number' });
+    }
+
+    let matchedName = toName || fromName || 'Shippo Label';
+
+    if (fromZip) {
+      try {
+        const encoded = encodeURIComponent(`Account Logins!A2:R300`);
+        const sheetRes = await fetch(
+          `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encoded}?key=${API_KEY}`
+        );
+        const sheetData = await sheetRes.json();
+        const rows: string[][] = sheetData.values || [];
+        for (const row of rows) {
+          const shipTo = (row[10] || '').toLowerCase();
+          if (shipTo.includes(fromZip) || shipTo.includes(fromStreet)) {
+            matchedName = row[2] || matchedName;
+            console.log('Matched mailbox:', matchedName);
+            break;
+          }
+        }
+      } catch(e) {
+        console.log('Sheet lookup failed:', e);
+      }
     }
 
     const res = await fetch(`${SUPABASE_URL}/rest/v1/shipments`, {
@@ -58,7 +76,7 @@ export async function POST(req: Request) {
         tracking_url,
         shipment_direction: 'outbound',
         current_status: 'Label Created',
-        customer_name: to_name || sender_name || company || 'Shippo Label',
+        customer_name: matchedName,
         description: 'Shippo Label — Mailbox to Warehouse',
         sync_source: 'shippo',
         updated_at: new Date().toISOString(),
@@ -66,11 +84,11 @@ export async function POST(req: Request) {
     });
 
     const resText = await res.text();
-    console.log('Supabase response:', res.status, resText.slice(0,200));
+    console.log('Supabase response:', res.status, resText.slice(0, 200));
 
     if (!res.ok) return NextResponse.json({ error: resText }, { status: 500 });
 
-    return NextResponse.json({ received: true, tracking_number });
+    return NextResponse.json({ received: true, tracking_number, customer_name: matchedName });
 
   } catch (e: any) {
     console.error('Shippo webhook error:', e.message);

@@ -271,6 +271,11 @@ body.dark #shiptrack-map{filter:invert(0.9) hue-rotate(180deg)}
 .toast.success svg{stroke:#6AAF75}
 .toast.warn svg{stroke:#C4924A}
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+.v4-stage-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 13px;border-radius:99px;font-size:12px;background:var(--ivory-2);border:.5px solid var(--cream-bd2);color:var(--charcoal);white-space:nowrap;letter-spacing:.01em}
+.v4-stage-pill .pill-cnt{font-weight:500;font-size:13px;min-width:20px;text-align:center;font-family:var(--font-display)}
+.v4-stage-pill.active{background:var(--gold-pale);border-color:var(--gold-bd);color:var(--ink)}
+.v4-sync-ts{font-size:10px;color:var(--stone-lt);letter-spacing:.04em;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -725,12 +730,36 @@ body.dark #shiptrack-map{filter:invert(0.9) hue-rotate(180deg)}
 <!-- INVENTORY -->
 <div class="page-view" id="view-inventory">
   <div class="section-header">
-    <div><div class="section-title">Inventory</div><div class="section-meta">Receiving & FBA levels</div></div>
+    <div><div class="section-title">Inventory Pipeline</div><div class="section-meta" style="letter-spacing:.08em">FULL PIPELINE — PURCHASED &#x2192; FBA</div></div>
     <button class="btn btn-primary" onclick="nav('fbashipments')">
       <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 4v12M4 10h12"/></svg>
       New FBA Shipment
     </button>
   </div>
+
+  <!-- V4 Pipeline Summary Bar -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px">
+    <div class="stat-card gold"><div class="stat-label">Total Inventory</div><div class="stat-value" id="v4-total-all">--</div><div class="stat-sub">all pipeline stages</div></div>
+    <div class="stat-card amber"><div class="stat-label">Total Cost</div><div class="stat-value" id="v4-total-cost-all">--</div><div class="stat-sub">across all inventory</div></div>
+    <div class="stat-card sage"><div class="stat-label">Total Proceeds</div><div class="stat-value" id="v4-total-proceeds-all">--</div><div class="stat-sub">est. combined value</div></div>
+    <div class="stat-card blue"><div class="stat-label">Total Units</div><div class="stat-value" id="v4-total-units" style="font-size:44px;line-height:1">--</div><div class="stat-sub">in pipeline</div></div>
+  </div>
+
+  <!-- V4 Pipeline Stage Row -->
+  <div style="display:flex;gap:8px;align-items:center;margin-bottom:20px;flex-wrap:wrap;padding:14px 18px;background:var(--ivory-2);border:.5px solid var(--cream-bd);border-radius:var(--r-md)">
+    <span style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--stone-lt);margin-right:4px;flex-shrink:0">Pipeline</span>
+    <span class="v4-stage-pill" id="pill-purchased">&#x1F4E6; Purchased <span class="pill-cnt" id="v4-cnt-purchased">&#x2014;</span></span>
+    <span style="color:var(--linen);font-size:14px">&#x203A;</span>
+    <span class="v4-stage-pill" id="pill-at_mailbox">&#x1F4EC; At Mailbox <span class="pill-cnt" id="v4-cnt-at_mailbox">&#x2014;</span></span>
+    <span style="color:var(--linen);font-size:14px">&#x203A;</span>
+    <span class="v4-stage-pill" id="pill-in_transit">&#x1F69A; In Transit <span class="pill-cnt" id="v4-cnt-in_transit">&#x2014;</span></span>
+    <span style="color:var(--linen);font-size:14px">&#x203A;</span>
+    <span class="v4-stage-pill" id="pill-at_warehouse">&#x1F3ED; At Warehouse <span class="pill-cnt" id="v4-cnt-at_warehouse">&#x2014;</span></span>
+    <span style="color:var(--linen);font-size:14px">&#x203A;</span>
+    <span class="v4-stage-pill" id="pill-sent_to_fba">&#x2705; Sent to FBA <span class="pill-cnt" id="v4-cnt-sent_to_fba">&#x2014;</span></span>
+    <span class="v4-sync-ts" id="v4-last-sync" style="margin-left:auto">V4 Last Sync: &#x2014;</span>
+  </div>
+
   <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px">
     <div class="stat-card gold"><div class="stat-label">Total Receiving</div><div class="stat-value" id="inv-total-receiving">--</div><div class="stat-sub">units at warehouse</div></div>
     <div class="stat-card blue"><div class="stat-label">Total FBA</div><div class="stat-value" id="inv-total-fba">--</div><div class="stat-sub">units at Amazon</div></div>
@@ -1246,7 +1275,7 @@ const TITLE_MAP={dashboard:'Dashboard',all:'All Shipments',inbound:'Inbound Pack
 const NAV_IDX={dashboard:0,all:1,inbound:2,outbound:3,add:4,bulk:5,alerts:6,map:7,mailboxes:8,inventory:9,fbainventory:10,catalog:11,fbashipments:12,receipts:13,import:14,integrations:15,settings:16};
 
 function nav(page){document.querySelectorAll('.page-view').forEach(v=>v.classList.remove('active'));document.querySelectorAll('.nav-item').forEach(v=>v.classList.remove('active'));const view=document.getElementById(PAGE_MAP[page]);if(view)view.classList.add('active');const items=document.querySelectorAll('.nav-item');if(items[NAV_IDX[page]])items[NAV_IDX[page]].classList.add('active');document.getElementById('topbar-title').textContent=TITLE_MAP[page]||page;if(page==='all')renderMainTable();if(page==='inbound')renderDirTable('in');if(page==='outbound')renderDirTable('out');if(page==='alerts')renderAlerts();if(page==='dashboard')renderDashboard();if(page==='integrations'){updateSyncUI();updateApiStatus();}if(page==='fbainventory')loadFBAInventoryPage();
-if(page==='inventory')loadInventory();
+if(page==='inventory'){loadInventory();loadV4Stages();}
 if(page==='catalog')loadCatalog();
 if(page==='fbashipments')loadFBAShipments();
 if(page==='receipts')loadReceipts();
@@ -2077,6 +2106,8 @@ function renderInventory(){
 
   document.getElementById('inv-total-proceeds').textContent='$'+(totalProceeds+fbaProceeds).toFixed(2);
   document.getElementById('inv-total-cost').textContent='$'+totalCost.toFixed(2);
+  var v4ca=document.getElementById('v4-total-cost-all');if(v4ca)v4ca.textContent='$'+totalCost.toFixed(2);
+  var v4pa=document.getElementById('v4-total-proceeds-all');if(v4pa)v4pa.textContent='$'+(totalProceeds+fbaProceeds).toFixed(2);
 
   // Receiving table
   const recEmpty=document.getElementById('inv-receiving-empty');
@@ -2111,6 +2142,42 @@ function renderInventory(){
       <td style="font-size:13px;color:#2A6535">$${proceeds.toFixed(2)}</td>
     </tr>`;
   }).join('');
+}
+
+
+async function loadV4Stages(){
+  try{
+    const res=await fetch(SUPABASE_URL+'/rest/v1/inventory_items?select=stage,quantity,updated_at&order=updated_at.desc&limit=2000',{
+      headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON}
+    });
+    if(!res.ok)throw new Error('V4 fetch failed');
+    const rows=await res.json();
+    const stages={purchased:0,at_mailbox:0,in_transit:0,at_warehouse:0,sent_to_fba:0};
+    rows.forEach(function(r){
+      var s=r.stage||'';
+      if(stages.hasOwnProperty(s)) stages[s]+=(r.quantity||1);
+    });
+    Object.entries(stages).forEach(function(e){
+      var s=e[0],cnt=e[1];
+      var el=document.getElementById('v4-cnt-'+s);
+      if(el) el.textContent=cnt||'0';
+      var pill=document.getElementById('pill-'+s);
+      if(pill) pill.classList.toggle('active',cnt>0);
+    });
+    var inPipeline=stages.purchased+stages.at_mailbox+stages.in_transit+stages.at_warehouse;
+    var totalUnits=inPipeline+stages.sent_to_fba;
+    var tEl=document.getElementById('v4-total-all');if(tEl)tEl.textContent=inPipeline;
+    var tuEl=document.getElementById('v4-total-units');if(tuEl)tuEl.textContent=totalUnits;
+    var tsEl=document.getElementById('v4-last-sync');
+    if(tsEl&&rows.length){
+      var ts=new Date(rows[0].updated_at);
+      tsEl.textContent='V4 Last Sync: '+ts.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true})+' \u00b7 '+ts.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    }
+  }catch(e){
+    console.error('V4 stages load error:',e);
+    var tsEl=document.getElementById('v4-last-sync');
+    if(tsEl) tsEl.textContent='V4 Last Sync: unavailable';
+  }
 }
 
 async function loadInventory(){

@@ -6,7 +6,7 @@
 <title>ShipTrack — Private Shipment Concierge</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <style>
 :root{--ivory:#F9F7F2;--ivory-2:#F3F0E8;--ivory-3:#EAE6DC;--linen:#E8E2D5;--gold:#B8974A;--gold-light:#D4B87A;--gold-pale:#F0E8D0;--charcoal:#1C1A17;--ink:#2E2C28;--stone:#6B6760;--stone-lt:#9B9790;--cream-bd:rgba(28,26,23,.10);--cream-bd2:rgba(28,26,23,.16);--gold-bd:rgba(184,151,74,.25);--shadow-sm:0 1px 3px rgba(28,26,23,.06),0 1px 2px rgba(28,26,23,.04);--shadow-md:0 4px 16px rgba(28,26,23,.08),0 1px 4px rgba(28,26,23,.04);--shadow-lg:0 8px 32px rgba(28,26,23,.10),0 2px 8px rgba(28,26,23,.06);--r-sm:8px;--r-md:14px;--r-lg:20px;--r-xl:28px;--font-display:'Cormorant Garamond',Georgia,serif;--font-body:'DM Sans',system-ui,sans-serif;--t:.2s cubic-bezier(.4,0,.2,1)}
@@ -76,7 +76,7 @@ a{color:inherit;text-decoration:none}
 .stat-card.rose::after{background:#B47060}
 .stat-card.muted::after{background:var(--stone-lt)}
 .stat-label{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--stone-lt);margin-bottom:10px}
-.stat-value{font-family:var(--font-display);font-size:36px;font-weight:300;line-height:1;letter-spacing:-.01em}
+.stat-value{font-family:'Inter',system-ui,sans-serif;font-size:36px;font-weight:300;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
 .stat-sub{font-size:11px;color:var(--stone-lt);margin-top:6px}
 .stat-icon{position:absolute;right:18px;top:18px;width:28px;height:28px;border-radius:var(--r-sm);background:var(--ivory-2);display:flex;align-items:center;justify-content:center}
 .stat-icon svg{width:14px;height:14px;stroke:var(--stone)}
@@ -189,7 +189,7 @@ textarea.form-control{min-height:88px;resize:vertical;line-height:1.6}
 .toggle.on::after{left:19px}
 .sync-stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
 .sync-stat{background:var(--ivory-2);border-radius:var(--r-md);padding:16px;text-align:center}
-.sync-stat-value{font-family:var(--font-display);font-size:28px;font-weight:300;margin-bottom:4px}
+.sync-stat-value{font-family:'Inter',system-ui,sans-serif;font-size:28px;font-weight:300;margin-bottom:4px;font-variant-numeric:tabular-nums}
 .sync-stat-label{font-size:11px;color:var(--stone-lt);letter-spacing:.06em;text-transform:uppercase}
 .sync-history-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:.5px solid var(--cream-bd);font-size:12px}
 .sync-history-row:last-child{border-bottom:none}
@@ -272,10 +272,26 @@ body.dark #shiptrack-map{filter:invert(0.9) hue-rotate(180deg)}
 .toast.warn svg{stroke:#C4924A}
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 
-.v4-stage-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 13px;border-radius:99px;font-size:12px;background:var(--ivory-2);border:.5px solid var(--cream-bd2);color:var(--charcoal);white-space:nowrap;letter-spacing:.01em}
-.v4-stage-pill .pill-cnt{font-weight:500;font-size:13px;min-width:20px;text-align:center;font-family:var(--font-display)}
-.v4-stage-pill.active{background:var(--gold-pale);border-color:var(--gold-bd);color:var(--ink)}
+.pipeline-bar{display:flex;align-items:stretch;gap:0;margin-bottom:20px;background:var(--ivory-2);border:.5px solid var(--cream-bd);border-radius:var(--r-lg);overflow:hidden}
+.pipeline-stage{flex:1;display:flex;flex-direction:column;align-items:center;padding:18px 12px 16px;cursor:pointer;transition:var(--t);position:relative;border-right:.5px solid var(--cream-bd);gap:6px}
+.pipeline-stage:last-child{border-right:none}
+.pipeline-stage:hover{background:var(--ivory-3)}
+.pipeline-stage.selected{background:var(--gold-pale)}
+.pipeline-stage.has-units{background:rgba(184,151,74,.04)}
+.pipeline-stage.has-units.selected{background:var(--gold-pale)}
+.pipeline-stage-arrow{position:absolute;right:-12px;top:50%;transform:translateY(-50%);width:24px;height:24px;background:var(--ivory-2);border:.5px solid var(--cream-bd);border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:2;font-size:11px;color:var(--stone-lt)}
+.pipeline-stage-icon{font-size:20px;line-height:1}
+.pipeline-stage-label{font-size:10px;letter-spacing:.10em;text-transform:uppercase;color:var(--stone-lt);text-align:center;margin-top:2px}
+.pipeline-stage-count{font-family:'Inter',system-ui,sans-serif;font-size:28px;font-weight:400;font-variant-numeric:tabular-nums;color:var(--charcoal);line-height:1}
+.pipeline-stage.selected .pipeline-stage-count{color:var(--gold)}
+.pipeline-stage.selected .pipeline-stage-label{color:var(--ink)}
+.pipeline-stage-progress{height:3px;width:70%;background:var(--linen);border-radius:2px;margin-top:4px;overflow:hidden}
+.pipeline-stage-progress-fill{height:100%;background:var(--gold);border-radius:2px;transition:width .3s ease}
+.pipeline-filter-hint{font-size:11px;color:var(--stone-lt);text-align:center;margin-top:4px;letter-spacing:.02em}
 .v4-sync-ts{font-size:10px;color:var(--stone-lt);letter-spacing:.04em;white-space:nowrap}
+.pipeline-empty-prompt{text-align:center;padding:48px 40px;color:var(--stone-lt);background:var(--ivory-2);border-radius:var(--r-md);border:.5px dashed var(--cream-bd2);margin-bottom:20px}
+.pipeline-empty-prompt svg{width:32px;height:32px;stroke:var(--stone-lt);margin:0 auto 12px;display:block}
+.pipeline-empty-prompt-title{font-size:15px;color:var(--stone);margin-bottom:4px}
 </style>
 </head>
 <body>
@@ -739,52 +755,76 @@ body.dark #shiptrack-map{filter:invert(0.9) hue-rotate(180deg)}
 
   <!-- V4 Pipeline Summary Bar -->
   <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px">
-    <div class="stat-card gold"><div class="stat-label">Total Inventory</div><div class="stat-value" id="v4-total-all">--</div><div class="stat-sub">all pipeline stages</div></div>
-    <div class="stat-card amber"><div class="stat-label">Total Cost</div><div class="stat-value" id="v4-total-cost-all">--</div><div class="stat-sub">across all inventory</div></div>
+    <div class="stat-card gold"><div class="stat-label">Total Units Owned</div><div class="stat-value" id="v4-total-all">--</div><div class="stat-sub">pipeline + FBA</div></div>
+    <div class="stat-card amber"><div class="stat-label">Total Cost</div><div class="stat-value" id="v4-total-cost-all">--</div><div class="stat-sub">pipeline + FBA combined</div></div>
     <div class="stat-card sage"><div class="stat-label">Total Proceeds</div><div class="stat-value" id="v4-total-proceeds-all">--</div><div class="stat-sub">est. combined value</div></div>
-    <div class="stat-card blue"><div class="stat-label">Total Units</div><div class="stat-value" id="v4-total-units" style="font-size:44px;line-height:1">--</div><div class="stat-sub">in pipeline</div></div>
+    <div class="stat-card blue"><div class="stat-label">Total FBA Units</div><div class="stat-value" id="v4-total-units">--</div><div class="stat-sub">units at Amazon</div></div>
   </div>
 
   <!-- V4 Pipeline Stage Row -->
-  <div style="display:flex;gap:8px;align-items:center;margin-bottom:20px;flex-wrap:wrap;padding:14px 18px;background:var(--ivory-2);border:.5px solid var(--cream-bd);border-radius:var(--r-md)">
-    <span style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--stone-lt);margin-right:4px;flex-shrink:0">Pipeline</span>
-    <span class="v4-stage-pill" id="pill-purchased">&#x1F4E6; Purchased <span class="pill-cnt" id="v4-cnt-purchased">&#x2014;</span></span>
-    <span style="color:var(--linen);font-size:14px">&#x203A;</span>
-    <span class="v4-stage-pill" id="pill-at_mailbox">&#x1F4EC; At Mailbox <span class="pill-cnt" id="v4-cnt-at_mailbox">&#x2014;</span></span>
-    <span style="color:var(--linen);font-size:14px">&#x203A;</span>
-    <span class="v4-stage-pill" id="pill-in_transit">&#x1F69A; In Transit <span class="pill-cnt" id="v4-cnt-in_transit">&#x2014;</span></span>
-    <span style="color:var(--linen);font-size:14px">&#x203A;</span>
-    <span class="v4-stage-pill" id="pill-at_warehouse">&#x1F3ED; At Warehouse <span class="pill-cnt" id="v4-cnt-at_warehouse">&#x2014;</span></span>
-    <span style="color:var(--linen);font-size:14px">&#x203A;</span>
-    <span class="v4-stage-pill" id="pill-sent_to_fba">&#x2705; Sent to FBA <span class="pill-cnt" id="v4-cnt-sent_to_fba">&#x2014;</span></span>
-    <span class="v4-sync-ts" id="v4-last-sync" style="margin-left:auto">V4 Last Sync: &#x2014;</span>
+  <div class="pipeline-bar" id="pipeline-bar">
+    <div class="pipeline-stage" id="pill-purchased" onclick="selectPipelineStage('purchased')" title="Click to filter by stage">
+      <div class="pipeline-stage-icon">📦</div>
+      <div class="pipeline-stage-count" id="v4-cnt-purchased">—</div>
+      <div class="pipeline-stage-label">Purchased</div>
+      <div class="pipeline-stage-progress"><div class="pipeline-stage-progress-fill" id="progress-purchased" style="width:0%"></div></div>
+    </div>
+    <div class="pipeline-stage" id="pill-at_mailbox" onclick="selectPipelineStage('at_mailbox')" title="Click to filter by stage">
+      <div class="pipeline-stage-icon">📬</div>
+      <div class="pipeline-stage-count" id="v4-cnt-at_mailbox">—</div>
+      <div class="pipeline-stage-label">At Mailbox</div>
+      <div class="pipeline-stage-progress"><div class="pipeline-stage-progress-fill" id="progress-at_mailbox" style="width:0%"></div></div>
+    </div>
+    <div class="pipeline-stage" id="pill-in_transit" onclick="selectPipelineStage('in_transit')" title="Click to filter by stage">
+      <div class="pipeline-stage-icon">🚚</div>
+      <div class="pipeline-stage-count" id="v4-cnt-in_transit">—</div>
+      <div class="pipeline-stage-label">In Transit</div>
+      <div class="pipeline-stage-progress"><div class="pipeline-stage-progress-fill" id="progress-in_transit" style="width:0%"></div></div>
+    </div>
+    <div class="pipeline-stage" id="pill-at_warehouse" onclick="selectPipelineStage('at_warehouse')" title="Click to filter by stage">
+      <div class="pipeline-stage-icon">🏭</div>
+      <div class="pipeline-stage-count" id="v4-cnt-at_warehouse">—</div>
+      <div class="pipeline-stage-label">At Warehouse</div>
+      <div class="pipeline-stage-progress"><div class="pipeline-stage-progress-fill" id="progress-at_warehouse" style="width:0%"></div></div>
+    </div>
+    <div class="pipeline-stage" id="pill-sent_to_fba" onclick="selectPipelineStage('sent_to_fba')" title="Click to filter by stage">
+      <div class="pipeline-stage-icon">✅</div>
+      <div class="pipeline-stage-count" id="v4-cnt-sent_to_fba">—</div>
+      <div class="pipeline-stage-label">Sent to FBA</div>
+      <div class="pipeline-stage-progress"><div class="pipeline-stage-progress-fill" id="progress-sent_to_fba" style="width:0%"></div></div>
+    </div>
+  </div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+    <div id="pipeline-stage-hint" style="font-size:12px;color:var(--stone-lt)">Click a stage above to filter inventory</div>
+    <span class="v4-sync-ts" id="v4-last-sync">V4 Last Sync: —</span>
   </div>
 
   <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:28px">
-    <div class="stat-card blue"><div class="stat-label">Total FBA</div><div class="stat-value" id="inv-total-fba">--</div><div class="stat-sub">units at Amazon</div></div>
+    <div class="stat-card blue"><div class="stat-label">FBA at Amazon</div><div class="stat-value" id="inv-total-fba">--</div><div class="stat-sub">units at Amazon</div></div>
     <div class="stat-card sage"><div class="stat-label">Est. FBA Proceeds</div><div class="stat-value" id="inv-total-proceeds">--</div><div class="stat-sub">at Amazon</div></div>
   </div>
 
   <!-- Pipeline Inventory — full width, product breakdown by stage -->
-  <div class="card" style="margin-bottom:20px">
-    <div class="card-header"><div class="card-title">Pipeline Inventory</div><div class="card-meta" id="pipeline-last-updated">By product &mdash; active stages only</div></div>
+  <div id="pipeline-prompt" class="pipeline-empty-prompt" style="display:block">
+    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 7l8-4 8 4v6l-8 4-8-4V7z"/><path d="M10 3v10M2 7l8 4 8-4"/></svg>
+    <div class="pipeline-empty-prompt-title">Select a stage to view inventory</div>
+    <div style="font-size:12px">Click any pipeline stage above to see products in that stage</div>
+  </div>
+  <div class="card" id="pipeline-card" style="margin-bottom:20px;display:none">
+    <div class="card-header"><div class="card-title" id="pipeline-card-title">Pipeline Inventory</div><div class="card-meta" id="pipeline-last-updated"></div></div>
     <div class="table-wrap">
       <table>
-        <thead><tr>
+        <thead><tr id="pipeline-thead-row">
           <th>Product</th>
-          <th style="text-align:right">&#x1F4E6; Purchased</th>
-          <th style="text-align:right">&#x1F4EC; At Mailbox</th>
-          <th style="text-align:right">&#x1F69A; In Transit</th>
-          <th style="text-align:right">&#x1F3ED; At Warehouse</th>
-          <th style="text-align:right">Total</th>
+          <th style="text-align:right" id="pipeline-col-header">Units</th>
         </tr></thead>
         <tbody id="inv-pipeline-tbody"></tbody>
       </table>
     </div>
     <div class="empty-state" id="inv-pipeline-empty" style="display:none">
       <div class="empty-icon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 7l8-4 8 4v6l-8 4-8-4V7z"/></svg></div>
-      <div class="empty-title">No inventory data</div>
-      <div class="empty-sub">Orders will appear once Gmail syncs Melaleuca confirmations.</div>
+      <div class="empty-title">No units in this stage</div>
+      <div class="empty-sub">No products currently in this pipeline stage.</div>
     </div>
   </div>
   <!-- FBA Inventory -->
@@ -885,7 +925,7 @@ body.dark #shiptrack-map{filter:invert(0.9) hue-rotate(180deg)}
   </div>
   <div class="table-wrap">
     <table>
-      <thead><tr><th>Shipment Name</th><th>Date</th><th>Items</th><th>Total Units</th><th>Notes</th><th>Actions</th></tr></thead>
+      <thead><tr><th>Shipment Name</th><th>Status</th><th>Date Created</th><th>Date Shipped</th><th>Items</th><th>Total Units</th><th>Shipping Cost</th><th>Actions</th></tr></thead>
       <tbody id="fba-shipments-tbody"></tbody>
     </table>
   </div>
@@ -920,6 +960,7 @@ body.dark #shiptrack-map{filter:invert(0.9) hue-rotate(180deg)}
     <div class="form-grid">
       <div class="form-group full"><label class="form-label">Shipment Name *</label><input class="form-control" type="text" id="fba-name" placeholder="e.g. FBA Shipment May 2026"></div>
       <div class="form-group"><label class="form-label">Ship Date</label><input class="form-control" type="date" id="fba-date"></div>
+      <div class="form-group"><label class="form-label">Shipping Cost to Amazon ($)</label><input class="form-control" type="number" step="0.01" min="0" id="fba-shipping-cost" placeholder="0.00"></div>
       <div class="form-group full"><label class="form-label">Notes</label><input class="form-control" type="text" id="fba-notes" placeholder="Optional notes"></div>
     </div>
     <div style="margin-top:24px;margin-bottom:16px;font-size:11px;letter-spacing:.10em;text-transform:uppercase;color:var(--stone)">Products</div>
@@ -1111,6 +1152,7 @@ const SUPABASE_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const SETTINGS_KEY='shiptrack_settings_v3';
 const SYNC_LOG_KEY='shiptrack_synclog_v3';
 const STALE_DAYS=3;
+const EXCLUDED_PRODUCTS=new Set(['Renew® Pump for 20 fl oz','32 oz. Shampoo Pump']);
 let shipments=[],dirFilter='',settings={},syncLogs=[];
 const today=new Date().toISOString().split('T')[0];
 const DELIVERED=['Delivered','Returned'];
@@ -1809,7 +1851,7 @@ async function refreshFBAInventoryPage(){
 }
 
 function renderFBAInventoryPage(){
-  const items=fbaInventory.slice();
+  const items=fbaInventory.filter(i=>!EXCLUDED_PRODUCTS.has(i.product_name));
   const totalSKUs=items.length;
   const totalUnits=items.reduce((s,i)=>s+(i.quantity||0),0);
   const inStock=items.filter(i=>(i.quantity||0)>0).length;
@@ -1966,7 +2008,7 @@ async function loadCatalog(){
 }
 
 function renderCatalog(){
-  document.getElementById('catalog-tbody').innerHTML=products.map(p=>`<tr>
+  document.getElementById('catalog-tbody').innerHTML=products.filter(p=>!EXCLUDED_PRODUCTS.has(p.name)).map(p=>`<tr>
     <td class="td-name">${p.name}</td>
     <td style="font-size:13px;color:var(--charcoal)">$${parseFloat(p.proceeds||0).toFixed(2)}</td>
     <td><span class="badge ${p.active?'badge-delivered':'badge-returned'}">${p.active?'Active':'Inactive'}</span></td>
@@ -2025,6 +2067,51 @@ async function deleteProduct(id){
 
 let invPeriod='all';
 let inventoryOrders=[];
+let selectedPipelineStage=null;
+let pipelineStageData={};
+
+function selectPipelineStage(stage){
+  if(selectedPipelineStage===stage){
+    selectedPipelineStage=null;
+  }else{
+    selectedPipelineStage=stage;
+  }
+  document.querySelectorAll('.pipeline-stage').forEach(el=>el.classList.remove('selected'));
+  if(selectedPipelineStage){
+    const pill=document.getElementById('pill-'+selectedPipelineStage);
+    if(pill)pill.classList.add('selected');
+    document.getElementById('pipeline-prompt').style.display='none';
+    document.getElementById('pipeline-card').style.display='block';
+    renderFilteredPipelineTable(selectedPipelineStage);
+  }else{
+    document.getElementById('pipeline-prompt').style.display='block';
+    document.getElementById('pipeline-card').style.display='none';
+  }
+}
+
+function renderFilteredPipelineTable(stage){
+  const stageLabels={purchased:'📦 Purchased',at_mailbox:'📬 At Mailbox',in_transit:'🚚 In Transit',at_warehouse:'🏭 At Warehouse',sent_to_fba:'✅ Sent to FBA'};
+  const titleEl=document.getElementById('pipeline-card-title');
+  const colHeader=document.getElementById('pipeline-col-header');
+  if(titleEl)titleEl.textContent='Pipeline: '+(stageLabels[stage]||stage);
+  if(colHeader)colHeader.textContent='Units in Stage';
+
+  const data=pipelineStageData[stage]||{};
+  const rows=Object.entries(data).filter(([name,qty])=>qty>0&&!EXCLUDED_PRODUCTS.has(name));
+  rows.sort((a,b)=>b[1]-a[1]);
+
+  const empty=document.getElementById('inv-pipeline-empty');
+  const tbody=document.getElementById('inv-pipeline-tbody');
+  if(!tbody)return;
+  empty.style.display=rows.length?'none':'block';
+  tbody.innerHTML=rows.map(([name,qty])=>`<tr>
+    <td class="td-name" style="max-width:280px;font-size:13px">${name}</td>
+    <td style="text-align:right;font-size:14px;font-weight:500;color:var(--charcoal)">${qty}</td>
+  </tr>`).join('');
+
+  const meta=document.getElementById('pipeline-last-updated');
+  if(meta)meta.textContent=rows.length+' product'+(rows.length!==1?'s':'')+' in this stage';
+}
 
 function setInvPeriod(el,period){
   invPeriod=period;
@@ -2065,7 +2152,7 @@ function renderInventory(){
   // FBA table
   const fbaEmpty=document.getElementById('inv-fba-empty');
   const fbaTbody=document.getElementById('inv-fba-tbody');
-  const fbaData=fbaInventory.filter(i=>i.quantity>0);
+  const fbaData=fbaInventory.filter(i=>i.quantity>0&&!EXCLUDED_PRODUCTS.has(i.product_name));
   fbaEmpty.style.display=fbaData.length?'none':'block';
   fbaTbody.innerHTML=fbaData.map(item=>{
     const prod=products.find(p=>p.name===item.product_name);
@@ -2100,25 +2187,40 @@ async function loadV4Stages(){
       if(ts&&(!maxTs||ts>maxTs)) maxTs=ts;
     });
 
-    // Update pills
+    // Update pipeline stage chips
+    var maxStageCount=Math.max(1,...Object.values(stages));
     Object.entries(stages).forEach(function(e){
       var s=e[0],cnt=e[1];
       var el=document.getElementById('v4-cnt-'+s);
       if(el) el.textContent=cnt;
       var pill=document.getElementById('pill-'+s);
-      if(pill) pill.classList.toggle('active',cnt>0);
+      if(pill){
+        pill.classList.toggle('has-units',cnt>0);
+      }
+      var fill=document.getElementById('progress-'+s);
+      if(fill) fill.style.width=Math.round(cnt/maxStageCount*100)+'%';
     });
 
-    // Total Inventory = all stages EXCEPT sent_to_fba
-    var inPipeline=stages.purchased+stages.at_mailbox+stages.in_transit+stages.at_warehouse;
-    var totalUnits=inPipeline+stages.sent_to_fba;
-    var tEl=document.getElementById('v4-total-all');if(tEl)tEl.textContent=inPipeline;
-    var tuEl=document.getElementById('v4-total-units');if(tuEl)tuEl.textContent=totalUnits;
+    // Total Units Owned = all pipeline stages + FBA inventory
+    var fbaTotal=fbaInventory.filter(i=>!EXCLUDED_PRODUCTS.has(i.product_name)).reduce((s,i)=>s+(i.quantity||0),0);
+    var pipelineTotal=stages.purchased+stages.at_mailbox+stages.in_transit+stages.at_warehouse+stages.sent_to_fba;
+    var totalUnitsOwned=pipelineTotal+fbaTotal;
+    var tEl=document.getElementById('v4-total-all');if(tEl)tEl.textContent=totalUnitsOwned;
+    // Total FBA Units card = FBA inventory only
+    var tuEl=document.getElementById('v4-total-units');if(tuEl)tuEl.textContent=fbaTotal;
 
-    // Total Cost = inventory_items line_total sum + existing receiving cost
+    // Total Cost = V4 pipeline line_total + FBA cost (FBA doesn't track cost separately, so use pipeline)
     window.v4LineTotalSum=v4LineTotal;
     var costEl=document.getElementById('v4-total-cost-all');
     if(costEl) costEl.textContent='$'+(v4LineTotal+(window.v4ReceivingCost||0)).toFixed(2);
+
+    // Update combined proceeds = FBA proceeds (pipeline proceeds not tracked per-item)
+    var fbaProc=fbaInventory.filter(i=>!EXCLUDED_PRODUCTS.has(i.product_name)).reduce((s,i)=>{
+      var prod=products.find(p=>p.name===i.product_name);
+      return s+(prod?.proceeds||0)*(i.quantity||0);
+    },0);
+    var procEl=document.getElementById('v4-total-proceeds-all');
+    if(procEl) procEl.textContent='$'+fbaProc.toFixed(2);
 
     // Last Sync = MAX(updated_at)
     var tsEl=document.getElementById('v4-last-sync');
@@ -2150,48 +2252,27 @@ async function loadPipelineTable(){
     if(!res.ok)throw new Error('Pipeline fetch failed: '+res.status);
     const rows=await res.json();
 
-    // Aggregate unit_qty per product per stage (active stages only, exclude sent_to_fba)
-    const activeStages=['purchased','at_mailbox','in_transit','at_warehouse'];
+    // Aggregate unit_qty per product per stage (all stages including sent_to_fba)
+    const allStages=['purchased','at_mailbox','in_transit','at_warehouse','sent_to_fba'];
     const byProduct={};
+    // Reset pipelineStageData
+    pipelineStageData={purchased:{},at_mailbox:{},in_transit:{},at_warehouse:{},sent_to_fba:{}};
     rows.forEach(function(r){
       var name=r.canonical_name||'Unknown';
+      if(EXCLUDED_PRODUCTS.has(name)) return;
       var s=r.stage||'';
-      if(!activeStages.includes(s)) return;
-      if(!byProduct[name]) byProduct[name]={purchased:0,at_mailbox:0,in_transit:0,at_warehouse:0};
+      if(!allStages.includes(s)) return;
+      if(!byProduct[name]) byProduct[name]={purchased:0,at_mailbox:0,in_transit:0,at_warehouse:0,sent_to_fba:0};
       byProduct[name][s]+=(r.unit_qty||0);
+      if(!pipelineStageData[s]) pipelineStageData[s]={};
+      pipelineStageData[s][name]=(pipelineStageData[s][name]||0)+(r.unit_qty||0);
     });
+    const activeStages=['purchased','at_mailbox','in_transit','at_warehouse'];
 
-    // Sort by at_warehouse desc, then by total desc
-    var table=Object.entries(byProduct).map(function(e){
-      var name=e[0],d=e[1];
-      var total=d.purchased+d.at_mailbox+d.in_transit+d.at_warehouse;
-      return{name,purchased:d.purchased,at_mailbox:d.at_mailbox,in_transit:d.in_transit,at_warehouse:d.at_warehouse,total};
-    }).filter(function(r){return r.total>0;});
-    table.sort(function(a,b){return b.at_warehouse-a.at_warehouse||b.total-a.total;});
-
-    var empty=document.getElementById('inv-pipeline-empty');
-    var tbody=document.getElementById('inv-pipeline-tbody');
-    if(!tbody)return;
-    if(empty) empty.style.display=table.length?'none':'block';
-
-    function numCell(v,highlight){
-      var color=v>0?(highlight?'#B8974A':'var(--charcoal)'):'var(--stone-lt)';
-      var weight=highlight&&v>0?'600':'400';
-      return '<td style="text-align:right;font-size:13px;color:'+color+';font-weight:'+weight+'">'+v+'</td>';
+    // If a stage is already selected, re-render the filtered table
+    if(selectedPipelineStage){
+      renderFilteredPipelineTable(selectedPipelineStage);
     }
-    tbody.innerHTML=table.map(function(r){
-      return'<tr>'+
-        '<td class="td-name" style="max-width:280px;font-size:13px">'+r.name+'</td>'+
-        numCell(r.purchased,false)+
-        numCell(r.at_mailbox,false)+
-        numCell(r.in_transit,false)+
-        numCell(r.at_warehouse,true)+
-        '<td style="text-align:right;font-size:14px;font-weight:500;color:var(--charcoal)">'+r.total+'</td>'+
-      '</tr>';
-    }).join('');
-
-    var meta=document.getElementById('pipeline-last-updated');
-    if(meta) meta.textContent=table.length+' products · active stages only';
   }catch(e){
     console.error('Pipeline table error:',e);
   }
@@ -2205,6 +2286,13 @@ async function loadFBAShipments(){
   }catch(e){console.error('FBA shipments load error:',e);}
 }
 
+function fbaShipmentStatusBadge(s){
+  const status=s.shipment_status||'created';
+  const map={created:{cls:'badge-created',label:'Created'},shipped:{cls:'badge-transit',label:'Shipped'},delivered:{cls:'badge-delivered',label:'Delivered'},in_transit:{cls:'badge-transit',label:'In Transit'},lost:{cls:'badge-lost',label:'Lost'}};
+  const{cls,label}=map[status]||{cls:'badge-unknown',label:status};
+  return`<span class="badge ${cls}">${label}</span>`;
+}
+
 function renderFBAShipments(){
   const empty=document.getElementById('fba-shipments-empty');
   const tbody=document.getElementById('fba-shipments-tbody');
@@ -2212,15 +2300,119 @@ function renderFBAShipments(){
   tbody.innerHTML=fbaShipmentsList.map(s=>{
     const items=s.fba_shipment_items||[];
     const totalUnits=items.reduce((sum,i)=>sum+(i.quantity||0),0);
-    return`<tr>
-      <td class="td-name">${s.shipment_name||'--'}</td>
-      <td class="td-muted">${s.shipped_at?new Date(s.shipped_at+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'--'}</td>
+    const shippingCost=s.shipping_cost_to_amazon?'$'+parseFloat(s.shipping_cost_to_amazon).toFixed(2):'--';
+    const createdAt=s.created_at?new Date(s.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'--';
+    const shippedAt=s.shipped_at?new Date(s.shipped_at+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'--';
+    const expandId='fba-expand-'+s.id;
+    return`<tr style="cursor:pointer" onclick="toggleFBAExpand('${s.id}')">
+      <td class="td-name">${s.shipment_name||'--'} <span style="font-size:11px;color:var(--stone-lt)">(click to expand)</span></td>
+      <td>${fbaShipmentStatusBadge(s)}</td>
+      <td class="td-muted">${createdAt}</td>
+      <td class="td-muted">${shippedAt}</td>
       <td style="font-size:12px;color:var(--stone)">${items.length} product${items.length!==1?'s':''}</td>
       <td style="font-size:14px;font-weight:500">${totalUnits} units</td>
-      <td class="td-muted">${s.notes||'--'}</td>
-      <td><button style="background:none;border:none;cursor:pointer;color:var(--stone-lt);padding:4px 8px;border-radius:6px;font-size:12px" onclick="deleteFBAShipment('${s.id}')">&#x2715;</button></td>
+      <td class="td-muted">${shippingCost}</td>
+      <td onclick="event.stopPropagation()"><div class="td-actions">
+        <button class="btn btn-outline" style="font-size:11px;padding:4px 10px" onclick="markFBAShipped('${s.id}')">Mark Shipped</button>
+        <button style="background:none;border:none;cursor:pointer;color:var(--stone-lt);padding:4px 8px;border-radius:6px;font-size:12px" onclick="deleteFBAShipment('${s.id}')">&#x2715;</button>
+      </div></td>
+    </tr>
+    <tr id="${expandId}" style="display:none">
+      <td colspan="8" style="padding:0;border-bottom:.5px solid var(--cream-bd)">
+        <div style="background:var(--ivory-2);padding:24px 28px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:20px">
+            <div>
+              <div style="font-size:11px;letter-spacing:.10em;text-transform:uppercase;color:var(--stone-lt);margin-bottom:8px">Carrier</div>
+              <input class="form-control" type="text" value="${s.carrier||''}" placeholder="e.g. UPS" style="font-size:13px;padding:8px 12px"
+                onchange="saveFBAShipmentField('${s.id}','carrier',this.value)">
+            </div>
+            <div>
+              <div style="font-size:11px;letter-spacing:.10em;text-transform:uppercase;color:var(--stone-lt);margin-bottom:8px">Tracking Number</div>
+              <input class="form-control" type="text" value="${s.tracking_number||''}" placeholder="Tracking #" style="font-size:13px;padding:8px 12px"
+                onchange="saveFBAShipmentField('${s.id}','tracking_number',this.value)">
+            </div>
+            <div>
+              <div style="font-size:11px;letter-spacing:.10em;text-transform:uppercase;color:var(--stone-lt);margin-bottom:8px">Shipping Cost to Amazon</div>
+              <input class="form-control" type="number" step="0.01" value="${s.shipping_cost_to_amazon||''}" placeholder="0.00" style="font-size:13px;padding:8px 12px"
+                onchange="saveFBAShipmentField('${s.id}','shipping_cost_to_amazon',parseFloat(this.value)||null)">
+            </div>
+            <div>
+              <div style="font-size:11px;letter-spacing:.10em;text-transform:uppercase;color:var(--stone-lt);margin-bottom:8px">BOL Document</div>
+              ${s.bol_url?`<div style="display:flex;align-items:center;gap:8px"><a href="${s.bol_url}" target="_blank" class="btn btn-outline" style="font-size:11px;padding:4px 10px">View BOL</a><label class="btn btn-ghost" style="font-size:11px;padding:4px 10px;cursor:pointer">Replace<input type="file" accept=".pdf" style="display:none" onchange="uploadFBABOL('${s.id}',this)"></label></div>`
+              :`<label class="btn btn-outline" style="font-size:11px;padding:6px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" style="width:12px;height:12px"><path d="M3 13v4h14v-4M10 3v10M7 10l3 3 3-3"/></svg>Upload BOL PDF<input type="file" accept=".pdf" style="display:none" onchange="uploadFBABOL('${s.id}',this)"></label>`}
+            </div>
+          </div>
+          <div style="font-size:11px;letter-spacing:.10em;text-transform:uppercase;color:var(--stone-lt);margin-bottom:10px">Products in Shipment</div>
+          <div class="table-wrap" style="margin-bottom:0">
+            <table style="background:#fff">
+              <thead><tr><th>Product</th><th style="text-align:right">Units</th></tr></thead>
+              <tbody>${items.map(i=>`<tr><td style="font-size:13px">${i.product_name||'--'}</td><td style="text-align:right;font-size:13px;font-weight:500">${i.quantity||0}</td></tr>`).join('')}</tbody>
+            </table>
+          </div>
+          <div style="margin-top:12px;font-size:12px;color:var(--stone-lt)">Created: ${createdAt} · Date Shipped: ${shippedAt}</div>
+        </div>
+      </td>
     </tr>`;
   }).join('');
+}
+
+function toggleFBAExpand(id){
+  const row=document.getElementById('fba-expand-'+id);
+  if(!row)return;
+  row.style.display=row.style.display==='none'?'table-row':'none';
+}
+
+async function markFBAShipped(id){
+  const carrier=prompt('Enter carrier (e.g. UPS, FedEx):');
+  if(carrier===null)return;
+  const tracking=prompt('Enter tracking number:');
+  if(tracking===null)return;
+  const now=new Date().toISOString().split('T')[0];
+  try{
+    const res=await fetch(`${SUPABASE_URL}/rest/v1/fba_shipments?id=eq.${id}`,{
+      method:'PATCH',
+      headers:{'apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`,'Content-Type':'application/json','Prefer':'return=minimal'},
+      body:JSON.stringify({shipment_status:'shipped',carrier:carrier.trim(),tracking_number:tracking.trim(),shipped_at:now,updated_at:new Date().toISOString()})
+    });
+    if(!res.ok){toast('Update failed','default');return;}
+    toast('Shipment marked as shipped!','success');
+    await loadFBAShipments();
+  }catch(e){toast('Error: '+e.message,'default');}
+}
+
+async function saveFBAShipmentField(id,field,value){
+  try{
+    const body={updated_at:new Date().toISOString()};
+    body[field]=value;
+    const res=await fetch(`${SUPABASE_URL}/rest/v1/fba_shipments?id=eq.${id}`,{
+      method:'PATCH',
+      headers:{'apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`,'Content-Type':'application/json','Prefer':'return=minimal'},
+      body:JSON.stringify(body)
+    });
+    if(res.ok)toast('Saved.','success');
+    else toast('Save failed','default');
+  }catch(e){toast('Error: '+e.message,'default');}
+}
+
+async function uploadFBABOL(shipmentId,input){
+  const file=input.files[0];
+  if(!file)return;
+  const s=fbaShipmentsList.find(s=>s.id===shipmentId);
+  const name=s?.shipment_name||shipmentId;
+  const filename=`FBA-${name.replace(/[^a-zA-Z0-9]/g,'-')}-BOL.pdf`;
+  toast('Uploading BOL...','default');
+  try{
+    const res=await fetch(`${SUPABASE_URL}/storage/v1/object/bol-documents/${filename}`,{
+      method:'POST',
+      headers:{'apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`,'Content-Type':'application/pdf','x-upsert':'true'},
+      body:file
+    });
+    if(!res.ok){toast('Upload failed','default');return;}
+    const bolUrl=`${SUPABASE_URL}/storage/v1/object/public/bol-documents/${filename}`;
+    await saveFBAShipmentField(shipmentId,'bol_url',bolUrl);
+    toast('BOL uploaded!','success');
+    await loadFBAShipments();
+  }catch(e){toast('Upload error: '+e.message,'default');}
 }
 
 function openNewFBAShipment(){
@@ -2228,6 +2420,7 @@ function openNewFBAShipment(){
   document.getElementById('fba-name').value='FBA Shipment '+new Date().toLocaleDateString('en-US',{month:'long',year:'numeric'});
   document.getElementById('fba-date').value=new Date().toISOString().split('T')[0];
   document.getElementById('fba-notes').value='';
+  document.getElementById('fba-shipping-cost').value='';
   document.getElementById('fba-items-list').innerHTML='';
   fbaItemCount=0;
   addFBAItem();
@@ -2267,7 +2460,8 @@ async function saveFBAShipment(){
 
   try{
     // Create shipment
-    const shipRes=await fetch(`${SUPABASE_URL}/rest/v1/fba_shipments`,{method:'POST',headers:{'apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`,'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify({shipment_name:name,shipped_at:document.getElementById('fba-date').value,notes:document.getElementById('fba-notes').value.trim()})});
+    const shippingCostVal=parseFloat(document.getElementById('fba-shipping-cost').value)||null;
+    const shipRes=await fetch(`${SUPABASE_URL}/rest/v1/fba_shipments`,{method:'POST',headers:{'apikey':SUPABASE_ANON,'Authorization':`Bearer ${SUPABASE_ANON}`,'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify({shipment_name:name,shipped_at:document.getElementById('fba-date').value||null,notes:document.getElementById('fba-notes').value.trim(),shipping_cost_to_amazon:shippingCostVal,shipment_status:'created'})});
     if(!shipRes.ok){const err=await shipRes.text();return showMsg('Failed: '+err.slice(0,80),'error');}
     const[shipment]=await shipRes.json();
 

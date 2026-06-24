@@ -2246,26 +2246,31 @@ async function loadInventory(){
 
 async function loadPipelineTable(){
   try{
-    const res=await fetch(SUPABASE_URL+'/rest/v1/inventory_items?select=canonical_name,stage,unit_qty&limit=5000',{
+    const res=await fetch(SUPABASE_URL+'/rest/v1/inventory_items?select=sub_items,stage,unit_qty&limit=5000',{
       headers:{'apikey':SUPABASE_ANON,'Authorization':'Bearer '+SUPABASE_ANON}
     });
     if(!res.ok)throw new Error('Pipeline fetch failed: '+res.status);
     const rows=await res.json();
 
-    // Aggregate unit_qty per product per stage (all stages including sent_to_fba)
+    // Aggregate by sub_item name per stage (all stages including sent_to_fba)
     const allStages=['purchased','at_mailbox','in_transit','at_warehouse','sent_to_fba'];
     const byProduct={};
     // Reset pipelineStageData
     pipelineStageData={purchased:{},at_mailbox:{},in_transit:{},at_warehouse:{},sent_to_fba:{}};
     rows.forEach(function(r){
-      var name=r.canonical_name||'Unknown';
-      if(EXCLUDED_PRODUCTS.has(name)) return;
       var s=r.stage||'';
       if(!allStages.includes(s)) return;
-      if(!byProduct[name]) byProduct[name]={purchased:0,at_mailbox:0,in_transit:0,at_warehouse:0,sent_to_fba:0};
-      byProduct[name][s]+=(r.unit_qty||0);
-      if(!pipelineStageData[s]) pipelineStageData[s]={};
-      pipelineStageData[s][name]=(pipelineStageData[s][name]||0)+(r.unit_qty||0);
+      var subItems=r.sub_items;
+      if(!subItems||!Array.isArray(subItems)||subItems.length===0) return;
+      subItems.forEach(function(si){
+        var name=si.name||'Unknown';
+        var qty=si.qty||0;
+        if(EXCLUDED_PRODUCTS.has(name)) return;
+        if(!byProduct[name]) byProduct[name]={purchased:0,at_mailbox:0,in_transit:0,at_warehouse:0,sent_to_fba:0};
+        byProduct[name][s]+=qty;
+        if(!pipelineStageData[s]) pipelineStageData[s]={};
+        pipelineStageData[s][name]=(pipelineStageData[s][name]||0)+qty;
+      });
     });
     const activeStages=['purchased','at_mailbox','in_transit','at_warehouse'];
 

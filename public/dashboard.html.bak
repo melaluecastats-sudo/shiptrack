@@ -256,7 +256,6 @@ body.dark #mb-modal > div,
 body.dark #mb-shipments-modal > div,
 body.dark #product-modal > div,
 body.dark #fba-modal > div{background:#1C1A17}
-body.dark #cal-day-panel > div{background:#1C1A17}
 body.dark .toggle{background:#2E2C28}
 body.dark .notif-dot{border-color:#141210}
 body.dark #shiptrack-map{filter:invert(0.9) hue-rotate(180deg)}
@@ -367,10 +366,6 @@ body.dark #shiptrack-map{filter:invert(0.9) hue-rotate(180deg)}
     <div class="nav-item" onclick="nav('receipts')">
       <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 2h12a1 1 0 011 1v14a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z"/><path d="M7 6h6M7 10h6M7 14h4"/></svg>
       Receipts <span class="nav-badge" id="nav-receipts-count">0</span>
-    </div>
-    <div class="nav-item" onclick="nav('calendar')">
-      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="16" height="15" rx="2"/><path d="M2 8h16M6 3v3M14 3v3"/></svg>
-      Delivery Calendar
     </div>
     <div class="nav-item" onclick="nav('import')">
       <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 13v4h14v-4M10 3v10M7 10l3 3 3-3"/></svg>
@@ -1125,65 +1120,6 @@ body.dark #shiptrack-map{filter:invert(0.9) hue-rotate(180deg)}
 </div>
 
 </div></div></div>
-<!-- DELIVERY CALENDAR -->
-<div class="page-view" id="view-calendar">
-  <div class="section-header">
-    <div><div class="section-title">Delivery Calendar</div><div class="section-meta">Expected arrivals &amp; shipments by date</div></div>
-    <div style="display:flex;gap:10px;align-items:center">
-      <button class="btn btn-outline" onclick="calToday()" style="font-size:12px;padding:6px 14px">Today</button>
-      <div style="display:flex;align-items:center;gap:8px">
-        <button class="btn-icon" onclick="calPrevMonth()" title="Previous month" style="width:32px;height:32px">
-          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13 15l-5-5 5-5"/></svg>
-        </button>
-        <div id="cal-month-label" style="font-family:var(--font-display);font-size:18px;font-weight:400;min-width:180px;text-align:center"></div>
-        <button class="btn-icon" onclick="calNextMonth()" title="Next month" style="width:32px;height:32px">
-          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 5l5 5-5 5"/></svg>
-        </button>
-      </div>
-    </div>
-  </div>
-  <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;flex-wrap:wrap">
-    <div style="display:flex;align-items:center;gap:8px">
-      <span style="font-size:11px;letter-spacing:.10em;text-transform:uppercase;color:var(--stone-lt)">Date</span>
-      <div class="filter-tabs" id="cal-date-tabs">
-        <div class="filter-tab active" onclick="setCalDateMode(this,'delivery')">Expected Delivery</div>
-        <div class="filter-tab" onclick="setCalDateMode(this,'ship')">Ship Date</div>
-      </div>
-    </div>
-    <div style="display:flex;align-items:center;gap:8px">
-      <span style="font-size:11px;letter-spacing:.10em;text-transform:uppercase;color:var(--stone-lt)">Color by</span>
-      <div class="filter-tabs" id="cal-color-tabs">
-        <div class="filter-tab active" onclick="setCalColorMode(this,'status')">Status</div>
-        <div class="filter-tab" onclick="setCalColorMode(this,'carrier')">Carrier</div>
-      </div>
-    </div>
-    <div id="cal-legend" style="display:flex;flex-wrap:wrap;gap:10px;margin-left:auto"></div>
-  </div>
-  <div class="card" style="padding:0;overflow:hidden">
-    <div id="cal-grid" style="padding:20px"></div>
-  </div>
-</div>
-
-<!-- CALENDAR DAY PANEL -->
-<div id="cal-day-panel" style="display:none;position:fixed;inset:0;background:rgba(28,26,23,.5);z-index:1000;align-items:flex-start;justify-content:center;overflow-y:auto;padding:40px 20px">
-  <div style="background:var(--ivory);border-radius:var(--r-xl);padding:32px;width:860px;max-width:95vw;box-shadow:var(--shadow-lg);margin:0 auto">
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px">
-      <div>
-        <div style="font-family:var(--font-display);font-size:24px;font-weight:400" id="cal-day-title"></div>
-        <div style="font-size:12px;color:var(--stone-lt);margin-top:4px;letter-spacing:.04em" id="cal-day-meta"></div>
-      </div>
-      <button class="btn btn-outline" onclick="document.getElementById('cal-day-panel').style.display='none'">Close</button>
-    </div>
-    <div class="table-wrap" style="margin-top:20px">
-      <table>
-        <thead><tr><th>Tracking #</th><th>Carrier</th><th>Dir.</th><th>Contact</th><th>Description</th><th>Status</th><th></th></tr></thead>
-        <tbody id="cal-day-tbody"></tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
-
 <!-- EDIT MODAL -->
 <div id="edit-modal" style="display:none;position:fixed;inset:0;background:rgba(28,26,23,.5);z-index:1000;align-items:center;justify-content:center">
   <div style="background:var(--ivory);border-radius:var(--r-xl);padding:32px;width:560px;max-width:90vw;box-shadow:var(--shadow-lg)">
@@ -1367,9 +1303,9 @@ function runSyncNow(){toast('Sync triggered — check Apps Script logs for detai
 function exportCSV(){const headers=['tracking','carrier','direction','customer_name','vendor_name','description','status','estDelivery','cost','order_number','lastCarrierUpdate','tracking_url'];const rows=shipments.map(s=>headers.map(h=>`"${(s[h]||'').toString().replace(/"/g,'""')}"`).join(','));const csv=[headers.join(','),...rows].join('\n');const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download=`shiptrack-export-${today}.csv`;a.click();}
 function clearData(){if(confirm('Reset?')){shipments=[];renderAll();nav('dashboard');toast('Reset.','default');}}
 
-const PAGE_MAP={dashboard:'view-dashboard',all:'view-all',inbound:'view-inbound',outbound:'view-outbound',add:'view-add',bulk:'view-bulk',alerts:'view-alerts',map:'view-map',mailboxes:'view-mailboxes',inventory:'view-inventory',fbainventory:'view-fbainventory',catalog:'view-catalog',fbashipments:'view-fbashipments',receipts:'view-receipts',import:'view-import',integrations:'view-integrations',settings:'view-settings',calendar:'view-calendar'};
-const TITLE_MAP={dashboard:'Dashboard',all:'All Shipments',inbound:'Inbound Packages',outbound:'Outbound Shipments',add:'Add Shipment',bulk:'Bulk Add',alerts:'Alerts',map:'Network Map',mailboxes:'Mailbox Directory',inventory:'Inventory',fbainventory:'FBA Inventory',catalog:'Product Catalog',fbashipments:'FBA Shipments',receipts:'Receipts',import:'Import / CSV',integrations:'Integrations',settings:'Settings',calendar:'Delivery Calendar'};
-const NAV_IDX={dashboard:0,all:1,inbound:2,outbound:3,add:4,bulk:5,alerts:6,map:7,mailboxes:8,inventory:9,fbainventory:10,catalog:11,fbashipments:12,receipts:13,import:14,integrations:15,settings:16,calendar:17};
+const PAGE_MAP={dashboard:'view-dashboard',all:'view-all',inbound:'view-inbound',outbound:'view-outbound',add:'view-add',bulk:'view-bulk',alerts:'view-alerts',map:'view-map',mailboxes:'view-mailboxes',inventory:'view-inventory',fbainventory:'view-fbainventory',catalog:'view-catalog',fbashipments:'view-fbashipments',receipts:'view-receipts',import:'view-import',integrations:'view-integrations',settings:'view-settings'};
+const TITLE_MAP={dashboard:'Dashboard',all:'All Shipments',inbound:'Inbound Packages',outbound:'Outbound Shipments',add:'Add Shipment',bulk:'Bulk Add',alerts:'Alerts',map:'Network Map',mailboxes:'Mailbox Directory',inventory:'Inventory',fbainventory:'FBA Inventory',catalog:'Product Catalog',fbashipments:'FBA Shipments',receipts:'Receipts',import:'Import / CSV',integrations:'Integrations',settings:'Settings'};
+const NAV_IDX={dashboard:0,all:1,inbound:2,outbound:3,add:4,bulk:5,alerts:6,map:7,mailboxes:8,inventory:9,fbainventory:10,catalog:11,fbashipments:12,receipts:13,import:14,integrations:15,settings:16};
 
 function nav(page){document.querySelectorAll('.page-view').forEach(v=>v.classList.remove('active'));document.querySelectorAll('.nav-item').forEach(v=>v.classList.remove('active'));const view=document.getElementById(PAGE_MAP[page]);if(view)view.classList.add('active');const items=document.querySelectorAll('.nav-item');if(items[NAV_IDX[page]])items[NAV_IDX[page]].classList.add('active');document.getElementById('topbar-title').textContent=TITLE_MAP[page]||page;if(page==='all')renderMainTable();if(page==='inbound')renderDirTable('in');if(page==='outbound')renderDirTable('out');if(page==='alerts')renderAlerts();if(page==='dashboard')renderDashboard();if(page==='integrations'){updateSyncUI();updateApiStatus();}if(page==='fbainventory')loadFBAInventoryPage();
 if(page==='inventory'){loadInventory();loadV4Stages();loadPipelineTable();}
@@ -1377,8 +1313,7 @@ if(page==='catalog')loadCatalog();
 if(page==='fbashipments')loadFBAShipments();
 if(page==='receipts')loadReceipts();
 if(page==='map')initMap();
-if(page==='mailboxes')loadMailboxes();
-if(page==='calendar')renderCalendar();if(settings.aftershipKey&&document.getElementById('aftership-key-input'))document.getElementById('aftership-key-input').value='••••••••••••••••';}
+if(page==='mailboxes')loadMailboxes();if(settings.aftershipKey&&document.getElementById('aftership-key-input'))document.getElementById('aftership-key-input').value='••••••••••••••••';}
 function setDirTab(el,val){dirFilter=val;document.querySelectorAll('#dir-tabs .filter-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderMainTable();}
 function onGlobalSearch(){const q=document.getElementById('globalSearch').value;if(q.length>0){if(document.getElementById('filter-search'))document.getElementById('filter-search').value=q;nav('all');}}
 function toast(msg,type='default'){const wrap=document.getElementById('toasts');const el=document.createElement('div');el.className=`toast ${type}`;el.innerHTML=`<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="8"/><path d="M10 7v3M10 13h.01"/></svg>${msg}`;wrap.appendChild(el);setTimeout(()=>el.remove(),4000);}
@@ -2588,75 +2523,6 @@ function initDarkMode(){
   if(isDark)document.body.classList.add('dark');
   updateDarkIcons(isDark);
 }
-
-// ─── DELIVERY CALENDAR ────────────────────────────────────────────────────────
-let calYear=new Date().getFullYear(),calMonth=new Date().getMonth();
-let calColorMode='status';
-let calDateMode='delivery';
-
-const CAL_STATUS_COLORS={'Delivered':{bg:'#EFF6EE',dot:'#6AAF75',text:'#2A6535'},'Out for Delivery':{bg:'#EDF5EA',dot:'#8FAF8A',text:'#3A6B3A'},'In Transit':{bg:'#EAF0F5',dot:'#6A8FAF',text:'#3D6B8A'},'Label Created':{bg:'#F3F0E8',dot:'#B8974A',text:'#7A5A28'},'Delayed':{bg:'#F6F0E8',dot:'#C4924A',text:'#7A5A28'},'Delivery Exception':{bg:'#F6EDEA',dot:'#B47060',text:'#8A3A2A'},'Failed Attempt':{bg:'#FDF0EA',dot:'#C48A4A',text:'#8A5A2A'},'Returned':{bg:'#F0F0F0',dot:'#999',text:'#555'},'Unknown':{bg:'#F3F0E8',dot:'#9B9790',text:'#6B6760'}};
-const CAL_CARRIER_COLORS={'UPS':{bg:'#FDF4E8',dot:'#C4924A',text:'#7A5228'},'USPS':{bg:'#EAF0F8',dot:'#6A8FAF',text:'#2A4A7A'},'FedEx':{bg:'#EEE8F6',dot:'#9A7AAF',text:'#4A2A7A'},'DHL':{bg:'#FDF4E0',dot:'#C4B04A',text:'#7A6028'}};
-
-function getCalDateKey(s){const raw=calDateMode==='delivery'?(s.estDelivery||s.estimated_delivery_date||''):(s.addedAt||s.added_at||'');if(!raw)return null;return raw.split('T')[0];}
-
-function buildCalMap(){const map={};shipments.forEach(s=>{const key=getCalDateKey(s);if(!key)return;if(!map[key])map[key]=[];map[key].push(s);});return map;}
-
-function renderCalendar(){
-  const map=buildCalMap();
-  const firstDay=new Date(calYear,calMonth,1).getDay();
-  const daysInMonth=new Date(calYear,calMonth+1,0).getDate();
-  const monthNames=['January','February','March','April','May','June','July','August','September','October','November','December'];
-  const todayStr=new Date().toISOString().split('T')[0];
-  document.getElementById('cal-month-label').textContent=monthNames[calMonth]+' '+calYear;
-  const legendEl=document.getElementById('cal-legend');
-  if(calColorMode==='status'){legendEl.innerHTML=Object.entries(CAL_STATUS_COLORS).slice(0,6).map(([st,c])=>`<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--stone)"><span style="width:8px;height:8px;border-radius:50%;background:${c.dot};flex-shrink:0"></span>${st}</span>`).join('');}
-  else{legendEl.innerHTML=Object.entries(CAL_CARRIER_COLORS).map(([car,c])=>`<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--stone)"><span style="width:8px;height:8px;border-radius:50%;background:${c.dot};flex-shrink:0"></span>${car}</span>`).join('');}
-  let html=`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--cream-bd);border-radius:var(--r-md);overflow:hidden;border:.5px solid var(--cream-bd)">`;
-  ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(d=>{html+=`<div style="background:var(--ivory-2);padding:10px 0;text-align:center;font-size:10px;letter-spacing:.10em;text-transform:uppercase;color:var(--stone-lt)">${d}</div>`;});
-  for(let i=0;i<firstDay;i++){html+=`<div style="background:var(--ivory);min-height:100px;padding:8px"></div>`;}
-  for(let d=1;d<=daysInMonth;d++){
-    const dateStr=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const dayShipments=map[dateStr]||[];
-    const isToday=dateStr===todayStr;
-    const isPast=dateStr<todayStr;
-    let badgeHtml='';
-    if(dayShipments.length>0){
-      const groups={};
-      dayShipments.forEach(s=>{const key=calColorMode==='status'?(s.status||'Unknown'):s.carrier;groups[key]=(groups[key]||0)+1;});
-      const colorMap=calColorMode==='status'?CAL_STATUS_COLORS:CAL_CARRIER_COLORS;
-      badgeHtml=`<div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:4px">`;
-      Object.entries(groups).slice(0,4).forEach(([key,cnt])=>{const c=colorMap[key]||{bg:'#F3F0E8',dot:'#9B9790',text:'#6B6760'};badgeHtml+=`<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:99px;background:${c.bg};color:${c.text};font-size:10px;font-weight:500;white-space:nowrap"><span style="width:5px;height:5px;border-radius:50%;background:${c.dot};flex-shrink:0"></span>${cnt}</span>`;});
-      if(Object.keys(groups).length>4){badgeHtml+=`<span style="font-size:10px;color:var(--stone-lt);padding:2px 4px">+more</span>`;}
-      badgeHtml+='</div>';
-    }
-    const totalBadge=dayShipments.length>0?`<span style="position:absolute;top:6px;right:8px;font-family:'Inter',system-ui,sans-serif;font-size:11px;font-weight:600;color:${isToday?'#fff':'var(--gold)'}">${dayShipments.length}</span>`:'';
-    html+=`<div onclick="openCalDay('${dateStr}')" style="background:${isToday?'var(--charcoal)':isPast?'var(--ivory-2)':'#fff'};min-height:100px;padding:8px;cursor:${dayShipments.length>0?'pointer':'default'};position:relative;transition:background .15s"><div style="font-size:13px;font-weight:${isToday?'500':'400'};color:${isToday?'#fff':isPast?'var(--stone-lt)':'var(--charcoal)'};margin-bottom:2px">${d}</div>${totalBadge}${badgeHtml}</div>`;
-  }
-  const totalCells=firstDay+daysInMonth;
-  const remainder=totalCells%7===0?0:7-(totalCells%7);
-  for(let i=0;i<remainder;i++){html+=`<div style="background:var(--ivory);min-height:100px;padding:8px"></div>`;}
-  html+='</div>';
-  document.getElementById('cal-grid').innerHTML=html;
-}
-
-function openCalDay(dateStr){
-  const map=buildCalMap();
-  const dayShipments=map[dateStr]||[];
-  if(!dayShipments.length)return;
-  const d=new Date(dateStr+'T12:00:00');
-  const label=d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
-  document.getElementById('cal-day-title').textContent=label;
-  document.getElementById('cal-day-meta').textContent=`${dayShipments.length} shipment${dayShipments.length!==1?'s':''} \u00b7 ${calDateMode==='delivery'?'Expected Delivery':'Ship Date'}`;
-  document.getElementById('cal-day-tbody').innerHTML=dayShipments.map(s=>`<tr><td class="td-tracking">${s.tracking.slice(0,20)}${s.tracking.length>20?'\u2026':''}</td><td>${carrierBadge(s.carrier)}</td><td>${dirBadge(s.direction)}</td><td style="font-size:13px;color:var(--ink);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.customer_name||s.contact||s.vendor_name||'\u2014'}</td><td style="font-size:12px;color:var(--stone);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.description||'\u2014'}</td><td>${statusBadge(s.status)}</td><td><div class="td-actions">${trackBtn(s)}</div></td></tr>`).join('');
-  document.getElementById('cal-day-panel').style.display='flex';
-}
-
-function calPrevMonth(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}renderCalendar();}
-function calNextMonth(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}renderCalendar();}
-function calToday(){calYear=new Date().getFullYear();calMonth=new Date().getMonth();renderCalendar();}
-function setCalColorMode(el,mode){calColorMode=mode;document.querySelectorAll('#cal-color-tabs .filter-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderCalendar();}
-function setCalDateMode(el,mode){calDateMode=mode;document.querySelectorAll('#cal-date-tabs .filter-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderCalendar();}
-
 
 initDarkMode();
 loadSettings();

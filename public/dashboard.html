@@ -1124,8 +1124,66 @@ body.dark #shiptrack-map{filter:invert(0.9) hue-rotate(180deg)}
   </div>
 </div>
 
-</div></div></div>
+<!-- DELIVERY CALENDAR -->
+<div class="page-view" id="view-calendar">
+  <div class="section-header">
+    <div><div class="section-title">Delivery Calendar</div><div class="section-meta">Expected arrivals &amp; shipments by date</div></div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <button class="btn btn-outline" onclick="calToday()" style="font-size:12px;padding:6px 14px">Today</button>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button class="btn-icon" onclick="calPrevMonth()" title="Previous month" style="width:32px;height:32px">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13 15l-5-5 5-5"/></svg>
+        </button>
+        <div id="cal-month-label" style="font-family:var(--font-display);font-size:18px;font-weight:400;min-width:180px;text-align:center"></div>
+        <button class="btn-icon" onclick="calNextMonth()" title="Next month" style="width:32px;height:32px">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 5l5 5-5 5"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;flex-wrap:wrap">
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:11px;letter-spacing:.10em;text-transform:uppercase;color:var(--stone-lt)">Date</span>
+      <div class="filter-tabs" id="cal-date-tabs">
+        <div class="filter-tab active" onclick="setCalDateMode(this,'delivery')">Expected Delivery</div>
+        <div class="filter-tab" onclick="setCalDateMode(this,'ship')">Ship Date</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:11px;letter-spacing:.10em;text-transform:uppercase;color:var(--stone-lt)">Color by</span>
+      <div class="filter-tabs" id="cal-color-tabs">
+        <div class="filter-tab active" onclick="setCalColorMode(this,'status')">Status</div>
+        <div class="filter-tab" onclick="setCalColorMode(this,'carrier')">Carrier</div>
+      </div>
+    </div>
+    <div id="cal-legend" style="display:flex;flex-wrap:wrap;gap:10px;margin-left:auto"></div>
+  </div>
+  <div class="card" style="padding:0;overflow:hidden">
+    <div id="cal-grid" style="padding:20px"></div>
+  </div>
+</div>
 
+<!-- CALENDAR DAY PANEL -->
+<div id="cal-day-panel" style="display:none;position:fixed;inset:0;background:rgba(28,26,23,.5);z-index:1000;align-items:flex-start;justify-content:center;overflow-y:auto;padding:40px 20px">
+  <div style="background:var(--ivory);border-radius:var(--r-xl);padding:32px;width:860px;max-width:95vw;box-shadow:var(--shadow-lg);margin:0 auto">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px">
+      <div>
+        <div style="font-family:var(--font-display);font-size:24px;font-weight:400" id="cal-day-title"></div>
+        <div style="font-size:12px;color:var(--stone-lt);margin-top:4px;letter-spacing:.04em" id="cal-day-meta"></div>
+      </div>
+      <button class="btn btn-outline" onclick="document.getElementById('cal-day-panel').style.display='none'">Close</button>
+    </div>
+    <div class="table-wrap" style="margin-top:20px">
+      <table>
+        <thead><tr><th>Tracking #</th><th>Carrier</th><th>Dir.</th><th>Contact</th><th>Description</th><th>Status</th><th></th></tr></thead>
+        <tbody id="cal-day-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+
+</div></div></div>
 <!-- EDIT MODAL -->
 <div id="edit-modal" style="display:none;position:fixed;inset:0;background:rgba(28,26,23,.5);z-index:1000;align-items:center;justify-content:center">
   <div style="background:var(--ivory);border-radius:var(--r-xl);padding:32px;width:560px;max-width:90vw;box-shadow:var(--shadow-lg)">
@@ -1311,7 +1369,7 @@ function clearData(){if(confirm('Reset?')){shipments=[];renderAll();nav('dashboa
 
 const PAGE_MAP={dashboard:'view-dashboard',all:'view-all',inbound:'view-inbound',outbound:'view-outbound',add:'view-add',bulk:'view-bulk',alerts:'view-alerts',map:'view-map',mailboxes:'view-mailboxes',inventory:'view-inventory',fbainventory:'view-fbainventory',catalog:'view-catalog',fbashipments:'view-fbashipments',receipts:'view-receipts',import:'view-import',integrations:'view-integrations',settings:'view-settings',calendar:'view-calendar'};
 const TITLE_MAP={dashboard:'Dashboard',all:'All Shipments',inbound:'Inbound Packages',outbound:'Outbound Shipments',add:'Add Shipment',bulk:'Bulk Add',alerts:'Alerts',map:'Network Map',mailboxes:'Mailbox Directory',inventory:'Inventory',fbainventory:'FBA Inventory',catalog:'Product Catalog',fbashipments:'FBA Shipments',receipts:'Receipts',import:'Import / CSV',integrations:'Integrations',settings:'Settings',calendar:'Delivery Calendar'};
-const NAV_IDX={dashboard:0,all:1,inbound:2,outbound:3,add:4,bulk:5,alerts:6,map:7,mailboxes:8,inventory:9,fbainventory:10,catalog:11,fbashipments:12,receipts:13,import:15,integrations:16,settings:17,calendar:14};
+const NAV_IDX={dashboard:0,all:1,inbound:2,outbound:3,add:4,bulk:5,alerts:6,map:7,mailboxes:8,inventory:9,fbainventory:10,catalog:11,fbashipments:12,receipts:13,import:14,integrations:15,settings:16,calendar:17};
 
 function nav(page){document.querySelectorAll('.page-view').forEach(v=>v.classList.remove('active'));document.querySelectorAll('.nav-item').forEach(v=>v.classList.remove('active'));const view=document.getElementById(PAGE_MAP[page]);if(view)view.classList.add('active');const items=document.querySelectorAll('.nav-item');if(items[NAV_IDX[page]])items[NAV_IDX[page]].classList.add('active');document.getElementById('topbar-title').textContent=TITLE_MAP[page]||page;if(page==='all')renderMainTable();if(page==='inbound')renderDirTable('in');if(page==='outbound')renderDirTable('out');if(page==='alerts')renderAlerts();if(page==='dashboard')renderDashboard();if(page==='integrations'){updateSyncUI();updateApiStatus();}if(page==='fbainventory')loadFBAInventoryPage();
 if(page==='inventory'){loadInventory();loadV4Stages();loadPipelineTable();}

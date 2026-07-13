@@ -1369,7 +1369,7 @@ function clearData(){if(confirm('Reset?')){shipments=[];renderAll();nav('dashboa
 
 const PAGE_MAP={dashboard:'view-dashboard',all:'view-all',inbound:'view-inbound',outbound:'view-outbound',add:'view-add',bulk:'view-bulk',alerts:'view-alerts',map:'view-map',mailboxes:'view-mailboxes',inventory:'view-inventory',fbainventory:'view-fbainventory',catalog:'view-catalog',fbashipments:'view-fbashipments',receipts:'view-receipts',import:'view-import',integrations:'view-integrations',settings:'view-settings',calendar:'view-calendar'};
 const TITLE_MAP={dashboard:'Dashboard',all:'All Shipments',inbound:'Inbound Packages',outbound:'Outbound Shipments',add:'Add Shipment',bulk:'Bulk Add',alerts:'Alerts',map:'Network Map',mailboxes:'Mailbox Directory',inventory:'Inventory',fbainventory:'FBA Inventory',catalog:'Product Catalog',fbashipments:'FBA Shipments',receipts:'Receipts',import:'Import / CSV',integrations:'Integrations',settings:'Settings',calendar:'Delivery Calendar'};
-const NAV_IDX={dashboard:0,all:1,inbound:2,outbound:3,add:4,bulk:5,alerts:6,map:7,mailboxes:8,inventory:9,fbainventory:10,catalog:11,fbashipments:12,receipts:13,import:14,integrations:15,settings:16,calendar:17};
+const NAV_IDX={dashboard:0,all:1,inbound:2,outbound:3,add:4,bulk:5,alerts:6,map:7,mailboxes:8,inventory:9,fbainventory:10,catalog:11,fbashipments:12,receipts:13,import:14,integrations:15,settings:16,calendar:14};
 
 function nav(page){document.querySelectorAll('.page-view').forEach(v=>v.classList.remove('active'));document.querySelectorAll('.nav-item').forEach(v=>v.classList.remove('active'));const view=document.getElementById(PAGE_MAP[page]);if(view)view.classList.add('active');const items=document.querySelectorAll('.nav-item');if(items[NAV_IDX[page]])items[NAV_IDX[page]].classList.add('active');document.getElementById('topbar-title').textContent=TITLE_MAP[page]||page;if(page==='all')renderMainTable();if(page==='inbound')renderDirTable('in');if(page==='outbound')renderDirTable('out');if(page==='alerts')renderAlerts();if(page==='dashboard')renderDashboard();if(page==='integrations'){updateSyncUI();updateApiStatus();}if(page==='fbainventory')loadFBAInventoryPage();
 if(page==='inventory'){loadInventory();loadV4Stages();loadPipelineTable();}
@@ -1378,7 +1378,7 @@ if(page==='fbashipments')loadFBAShipments();
 if(page==='receipts')loadReceipts();
 if(page==='map')initMap();
 if(page==='mailboxes')loadMailboxes();
-if(page==='calendar')renderCalendar();if(settings.aftershipKey&&document.getElementById('aftership-key-input'))document.getElementById('aftership-key-input').value='••••••••••••••••';}
+if(settings.aftershipKey&&document.getElementById('aftership-key-input'))document.getElementById('aftership-key-input').value='••••••••••••••••';}
 function setDirTab(el,val){dirFilter=val;document.querySelectorAll('#dir-tabs .filter-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');renderMainTable();}
 function onGlobalSearch(){const q=document.getElementById('globalSearch').value;if(q.length>0){if(document.getElementById('filter-search'))document.getElementById('filter-search').value=q;nav('all');}}
 function toast(msg,type='default'){const wrap=document.getElementById('toasts');const el=document.createElement('div');el.className=`toast ${type}`;el.innerHTML=`<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10" cy="10" r="8"/><path d="M10 7v3M10 13h.01"/></svg>${msg}`;wrap.appendChild(el);setTimeout(()=>el.remove(),4000);}
